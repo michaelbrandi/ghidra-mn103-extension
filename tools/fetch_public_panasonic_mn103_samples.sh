@@ -39,6 +39,7 @@ PY
 
 cat > "${OUT_DIR}/sources.tsv" <<'EOF'
 corpus	file	url	member
+FZ1000	panasonic_dmc_fz1000_v22.bin	https://av.jpn.support.panasonic.com/support/share/eww/en/dsc/fz1000/FZ1K_V22.zip	FZ1K_V22.bin
 FP3	panasonic_dmc_fp3_v13.bin	https://av.jpn.support.panasonic.com/support/share/eww/en/dsc/fp3/FP3__V13.zip	FP3__V13.bin
 FZ80	panasonic_dc_fz80_v11.bin	https://av.jpn.support.panasonic.com/support/share2/eww/com/dsc/fz80_81_82_83_85/FZ80_V11.zip	FZ80_V11.bin
 HX-A1M	panasonic_hx_a1m_sdcardv.bin	https://av.jpn.support.panasonic.com/support/share/eww/jp/video/a1h/A1_V11.zip	SD_CarDV.bin
@@ -64,6 +65,7 @@ They are not encrypted update wrappers; the first bytes and the Ghidra imports
 show normal firmware containers with usable binary payloads.
 
 Sample sources:
+  - DMC-FZ1000 firmware update page
   - DMC-FP3 firmware update page
   - DC-FZ80/FZ81/FZ82/FZ83 firmware update page
   - HX-A1M firmware update page
