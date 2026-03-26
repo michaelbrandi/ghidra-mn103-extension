@@ -888,6 +888,7 @@ def render_slaspec(entries: List[OpcodeEntry]) -> str:
     lines.append(":bcs PCREL8_S1 is b0_any=0xC4; PCREL8_S1 { if ($(CF) == 1) goto PCREL8_S1; }")
     lines.append(":bvc PCREL8_D1 is b0_any=0xF8; b1_any=0xE8; PCREL8_D1 { if ($(VF) == 0) goto PCREL8_D1; }")
     lines.append(":bvs PCREL8_D1 is b0_any=0xF8; b1_any=0xE9; PCREL8_D1 { if ($(VF) == 1) goto PCREL8_D1; }")
+    # BNC/BNS branch on the N flag clear/set; NF names the same PSW bit.
     lines.append(":bnc PCREL8_D1 is b0_any=0xF8; b1_any=0xEA; PCREL8_D1 { if ($(NF) == 0) goto PCREL8_D1; }")
     lines.append(":bns PCREL8_D1 is b0_any=0xF8; b1_any=0xEB; PCREL8_D1 { if ($(NF) == 1) goto PCREL8_D1; }")
     lines.append(":bra PCREL8_S1 is b0_any=0xCA; PCREL8_S1 { goto PCREL8_S1; }")

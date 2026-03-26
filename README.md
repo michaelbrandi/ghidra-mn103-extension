@@ -153,8 +153,6 @@ historical reference.
   with the remaining displacement-width bookkeeping centralized in the generator;
   the exact hardware intent is still inferred from opcode layout.
 - Some advanced AM33 pair-op aliases and undefined opcode families are still fallback for now
-- Memory-form `add/sub/cmp` semantics are still intentionally minimal
-- `bnc`/`bns` condition mapping currently follows MN102-style `NF` behavior (inference)
 - AM33 overlap aliases follow binutils table precedence (first-match retained)
 - Bit-memory `btst`/`bset`/`bclr` flag behavior now follows the manual more closely: `VF`/`CF` clear, `NF`/`ZF` track the logical test result, and the byte memory side effects remain modeled explicitly
 
