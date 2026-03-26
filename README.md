@@ -229,7 +229,6 @@ Or run the fetch + analysis wrapper:
 ```
 
 This corpus currently includes firmware images from:
-- DMC-FZ1000
 - DMC-FP3
 - DC-FZ80/FZ81/FZ82/FZ83
 - HX-A1M
