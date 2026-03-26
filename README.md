@@ -5,6 +5,13 @@ It was generated from upstream GNU binutils opcode metadata and is intended to
 get you immediately unstuck when importing/disassembling MN10300/AM33 binaries
 while keeping the build path reproducible.
 
+## Development note
+
+This repository was developed with assistance from AI coding tools. The
+extension is useful for analysis and regression testing, but it should still
+be reviewed and validated by a human developer before any production use or
+security-sensitive deployment.
+
 ## Compatibility note (Ghidra 12.0.4)
 
 As of March 26, 2026, the packaged `data/languages/mn103.slaspec` is the
