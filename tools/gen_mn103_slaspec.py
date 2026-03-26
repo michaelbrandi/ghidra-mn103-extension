@@ -714,6 +714,17 @@ def render_slaspec(entries: List[OpcodeEntry]) -> str:
     def assign_body(dest: str, expr: str) -> str:
         return f"{{ {dest} = {expr}; }}"
 
+    def loop_back_body(cond: str | None) -> str:
+        core = (
+            "RREG_B3_HI = MEMINC2_SIMM4_RN4_D10; "
+            "local inc:4 = sext(SIMM4_B2); "
+            "RREG_B3_LO = RREG_B3_LO + inc; "
+            "local loop_pc:4 = LAR - 4; "
+        )
+        if cond is None:
+            return f"{{ {core} goto [loop_pc]; }}"
+        return f"{{ {core} if ({cond}) goto [loop_pc]; }}"
+
     # Keep the post-increment bookkeeping centralized so the AM33 memory
     # families use the same displacement expressions everywhere.
     inc_simm8 = "sext(b3_simm)"
@@ -736,6 +747,7 @@ def render_slaspec(entries: List[OpcodeEntry]) -> str:
     lines.append("define register offset=100 size=4 [ XR1 XR2 XR3 XR4 XR5 XR6 XR7 XR8 XR9 XR10 XR11 XR12 XR13 XR14 XR15 ];")
     lines.append("define register offset=160 size=4 [ FS0 FS1 FS2 FS3 FS4 FS5 FS6 FS7 FS8 FS9 FS10 FS11 FS12 FS13 FS14 FS15 FS16 FS17 FS18 FS19 FS20 FS21 FS22 FS23 FS24 FS25 FS26 FS27 FS28 FS29 FS30 FS31 ];")
     lines.append("define register offset=288 size=4 [ FD0 FD1 FD2 FD3 FD4 FD5 FD6 FD7 FD8 FD9 FD10 FD11 FD12 FD13 FD14 FD15 FD16 FD17 FD18 FD19 FD20 FD21 FD22 FD23 FD24 FD25 FD26 FD27 FD28 FD29 FD30 FD31 ];")
+    lines.append("define register offset=416 size=4 [ LAR LIR ];")
     lines.append("")
 
     for i in range(7):
@@ -3266,29 +3278,34 @@ def render_slaspec(entries: List[OpcodeEntry]) -> str:
                 ),
             ]
         )
-    phase318_movl: List[Tuple[str, int]] = [
-        ("mov_llt", 0xF7E00000),
-        ("mov_lgt", 0xF7E00001),
-        ("mov_lge", 0xF7E00002),
-        ("mov_lle", 0xF7E00003),
-        ("mov_lcs", 0xF7E00004),
-        ("mov_lhi", 0xF7E00005),
-        ("mov_lcc", 0xF7E00006),
-        ("mov_lls", 0xF7E00007),
-        ("mov_leq", 0xF7E00008),
-        ("mov_lne", 0xF7E00009),
-        ("mov_lra", 0xF7E0000A),
+    phase318_movl: List[Tuple[str, int, str | None]] = [
+        ("mov_llt", 0xF7E00000, "((($(NF) == 1) ^ ($(VF) == 1)) == 1)"),
+        ("mov_lgt", 0xF7E00001, "($(ZF) == 0) && ((($(NF) == 1) ^ ($(VF) == 1)) == 0)"),
+        ("mov_lge", 0xF7E00002, "((($(NF) == 1) ^ ($(VF) == 1)) == 0)"),
+        ("mov_lle", 0xF7E00003, "($(ZF) == 1) || ((($(NF) == 1) ^ ($(VF) == 1)) == 1)"),
+        ("mov_lcs", 0xF7E00004, "($(CF) == 1)"),
+        ("mov_lhi", 0xF7E00005, "($(CF) == 0) && ($(ZF) == 0)"),
+        ("mov_lcc", 0xF7E00006, "($(CF) == 0)"),
+        ("mov_lls", 0xF7E00007, "($(CF) == 1) || ($(ZF) == 1)"),
+        ("mov_leq", 0xF7E00008, "($(ZF) == 1)"),
+        ("mov_lne", 0xF7E00009, "($(ZF) == 0)"),
+        ("mov_lra", 0xF7E0000A, None),
     ]
-    for mnemonic, opcode in phase318_movl:
-        phase318_specs.append(
+    phase318_movl_specs: List[Tuple[str, Tuple[str, int, int], str]] = []
+    for mnemonic, opcode, cond in phase318_movl:
+        phase318_movl_specs.append(
             (
                 f":{mnemonic} MEMINC2_SIMM4_RN4_D10, RREG_B3_HI",
                 ("FMT_D10", opcode, 0xFFFF000F),
+                loop_back_body(cond),
             )
         )
     phase_manual_keys |= {key for _, key in phase318_specs}
+    phase_manual_keys |= {key for _, key, _ in phase318_movl_specs}
     for head, key in phase318_specs:
         append_keyed_constructor(head, key)
+    for head, key, body in phase318_movl_specs:
+        append_keyed_constructor(head, key, body)
     lines.append("")
     lines.append("# Auto-generated from GNU binutils m10300-opc.c")
     lines.append("# Generic fallback constructors (non-control-flow) are mnemonic-only.")
@@ -3296,6 +3313,14 @@ def render_slaspec(entries: List[OpcodeEntry]) -> str:
 
     for e in kept:
         key = (e.fmt, e.opcode, e.mask)
+        if e.name.lower() == "setlb":
+            length, base_constraints = constructor_constraints(e)
+            pattern = constraints_to_pattern(length, base_constraints)
+            lines.append(
+                f":{sanitize_mnemonic(e.name)} is {pattern} "
+                "{ LIR = *:4 inst_next; LAR = inst_next + 4; }"
+            )
+            continue
         if e.name.lower() in MANUAL_MNEMONICS or key in MANUAL_KEYS or key in phase_manual_keys:
             continue
         try:
