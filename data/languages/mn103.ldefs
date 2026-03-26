@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ref: https://github.com/NationalSecurityAgency/ghidra/blob/Ghidra_10.4_build/Ghidra/Framework/SoftwareModeling/data/languages/language_definitions.rxg -->
+<language_definitions>
+	<language id="mn10300:LE:32:default" processor="MN10300" endian="little" size="32"
+	          version="0.6" variant="default"
+	          slafile="mn103.sla" processorspec="mn103.pspec" manualindexfile="../manuals/mn103.idx">
+		<description>Matsushita/Panasonic MN10300 (AM33 family, corpus-validated)</description>
+		<compiler name="default" spec="mn103.cspec" id="default"/>
+	</language>
+</language_definitions>

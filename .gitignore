@@ -1,0 +1,8 @@
+/build
+/dist
+*.sla
+.gradle
+.gradle-userhome/
+.ghidra-home/
+__pycache__/
+*.pyc

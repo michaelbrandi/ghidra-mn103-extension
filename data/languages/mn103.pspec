@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ref: https://github.com/NationalSecurityAgency/ghidra/blob/Ghidra_10.4_build/Ghidra/Framework/SoftwareModeling/data/languages/processor_spec.rxg -->
+<processor_spec>
+  <programcounter register="PC" />
+  <data_space space="ram" />
+
+  <register_data>
+    <register name="PSW" group="FLAGS" />
+  </register_data>
+
+  <default_symbols>
+    <symbol name="entry" address="0x00000000" entry="true" />
+  </default_symbols>
+</processor_spec>
