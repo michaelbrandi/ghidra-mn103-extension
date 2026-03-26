@@ -714,6 +714,14 @@ def render_slaspec(entries: List[OpcodeEntry]) -> str:
     def assign_body(dest: str, expr: str) -> str:
         return f"{{ {dest} = {expr}; }}"
 
+    # Keep the post-increment bookkeeping centralized so the AM33 memory
+    # families use the same displacement expressions everywhere.
+    inc_simm8 = "sext(b3_simm)"
+    inc_u24 = "zext(b3_any) | (zext(b4_any) << 8) | (zext(b5_any) << 16)"
+    inc_u32 = "zext(b3_any) | (zext(b4_any) << 8) | (zext(b5_any) << 16) | (zext(b6_any) << 24)"
+    postinc_rlo = "RREG_B2_LO = RREG_B2_LO + inc;"
+    postinc_rhi = "RREG_B2_HI = RREG_B2_HI + inc;"
+
     lines.append("define endian=little;")
     lines.append("define alignment=1;")
     lines.append("")
@@ -2940,46 +2948,94 @@ def render_slaspec(entries: List[OpcodeEntry]) -> str:
         ":fmov FPCR, RREG_B2_LO is b0_any=0xF9; b1_any=0xB7; b2_7=0 & b2_6=0 & b2_5=0 & b2_4=0 & RREG_B2_LO { RREG_B2_LO = FPCR; }",
         ":fmov FDM1_D6, FDM0_D6 is b0_any=0xF9; b1_7=1 & b1_6=1 & b1_5=0 & b1_4=0 & b1_3=0 & b1_2=0 & b2_4=0 & b2_0=0 & FDM1_D6 & FDM0_D6 { FDM0_D6 = FDM1_D6; }",
         ":fmov MEM_SD8_RREG_HI_D7, FSM2_D789 is b0_any=0xFB; b1_7=0 & b1_6=0 & b1_5=1 & b1_4=0 & b1_3=0 & b1_2=0 & b1_1=0 & FSM2_D789; MEM_SD8_RREG_HI_D7 { FSM2_D789 = MEM_SD8_RREG_HI_D7; }",
-        ":fmov MEMINC2_SIMM8_RREG_HI_D7, FSM2_D789 is b0_any=0xFB; b1_7=0 & b1_6=0 & b1_5=1 & b1_4=0 & b1_3=0 & b1_2=0 & b1_1=1 & FSM2_D789; MEMINC2_SIMM8_RREG_HI_D7 { FSM2_D789 = MEMINC2_SIMM8_RREG_HI_D7; local inc:4 = sext(b3_simm); RREG_B2_HI = RREG_B2_HI + inc; }",
+        ":fmov MEMINC2_SIMM8_RREG_HI_D7, FSM2_D789 is b0_any=0xFB; b1_7=0 & b1_6=0 & b1_5=1 & b1_4=0 & b1_3=0 & b1_2=0 & b1_1=1 & FSM2_D789; MEMINC2_SIMM8_RREG_HI_D7 { FSM2_D789 = MEMINC2_SIMM8_RREG_HI_D7; local inc:4 = "
+        + inc_simm8
+        + "; "
+        + postinc_rhi
+        + " }",
         ":fmov MEM_IMM8_SP_HI_D7, FSM2_D789 is b0_any=0xFB; b1_7=0 & b1_6=0 & b1_5=1 & b1_4=0 & b1_3=0 & b1_2=1 & b1_1=0 & FSM2_D789; MEM_IMM8_SP_HI_D7 { FSM2_D789 = MEM_IMM8_SP_HI_D7; }",
         ":fmov MEM_RI_RREG_D7, FSN1_D7 is b0_any=0xFB; b1_any=0x27; b3_3=0 & b3_2=0 & b3_0=0 & MEM_RI_RREG_D7 & FSN1_D7 { FSN1_D7 = MEM_RI_RREG_D7; }",
         ":fmov FSM3_D789, MEM_SD8_RREG_D7 is b0_any=0xFB; b1_7=0 & b1_6=0 & b1_5=1 & b1_4=1 & b1_3=0 & b1_2=0 & b1_0=0 & FSM3_D789; MEM_SD8_RREG_D7 { MEM_SD8_RREG_D7 = FSM3_D789; }",
-        ":fmov FSM3_D789, MEMINC2_SIMM8_RREG_D7 is b0_any=0xFB; b1_7=0 & b1_6=0 & b1_5=1 & b1_4=1 & b1_3=0 & b1_2=0 & b1_0=1 & FSM3_D789; MEMINC2_SIMM8_RREG_D7 { MEMINC2_SIMM8_RREG_D7 = FSM3_D789; local inc:4 = sext(b3_simm); RREG_B2_LO = RREG_B2_LO + inc; }",
+        ":fmov FSM3_D789, MEMINC2_SIMM8_RREG_D7 is b0_any=0xFB; b1_7=0 & b1_6=0 & b1_5=1 & b1_4=1 & b1_3=0 & b1_2=0 & b1_0=1 & FSM3_D789; MEMINC2_SIMM8_RREG_D7 { MEMINC2_SIMM8_RREG_D7 = FSM3_D789; local inc:4 = "
+        + inc_simm8
+        + "; "
+        + postinc_rlo
+        + " }",
         ":fmov FSM3_D789, MEM_IMM8_SP_D7 is b0_any=0xFB; b1_7=0 & b1_6=0 & b1_5=1 & b1_4=1 & b1_3=0 & b1_2=1 & b1_0=0 & FSM3_D789; MEM_IMM8_SP_D7 { MEM_IMM8_SP_D7 = FSM3_D789; }",
         ":fmov FSN1_D7, MEM_RI_RREG_D7 is b0_any=0xFB; b1_any=0x37; b3_3=0 & b3_2=0 & b3_0=0 & FSN1_D7 & MEM_RI_RREG_D7 { MEM_RI_RREG_D7 = FSN1_D7; }",
         ":fmov MEM_RI_RREG_D7, FDN1_D7 is b0_any=0xFB; b1_any=0x47; b3_4=0 & b3_3=0 & b3_2=0 & b3_0=0 & MEM_RI_RREG_D7 & FDN1_D7 { FDN1_D7 = MEM_RI_RREG_D7; }",
         ":fmov FDN1_D7, MEM_RI_RREG_D7 is b0_any=0xFB; b1_any=0x57; b3_4=0 & b3_3=0 & b3_2=0 & b3_0=0 & FDN1_D7 & MEM_RI_RREG_D7 { MEM_RI_RREG_D7 = FDN1_D7; }",
         ":fmov MEM_SD8_RREG_HI_D7, FDM2_D789 is b0_any=0xFB; b1_any=0xA0; b2_0=0 & MEM_SD8_RREG_HI_D7 & FDM2_D789 { FDM2_D789 = MEM_SD8_RREG_HI_D7; }",
-        ":fmov MEMINC2_SIMM8_RREG_HI_D7, FDM2_D789 is b0_any=0xFB; b1_any=0xA2; b2_0=0 & MEMINC2_SIMM8_RREG_HI_D7 & FDM2_D789 { FDM2_D789 = MEMINC2_SIMM8_RREG_HI_D7; local inc:4 = sext(b3_simm); RREG_B2_HI = RREG_B2_HI + inc; }",
+        ":fmov MEMINC2_SIMM8_RREG_HI_D7, FDM2_D789 is b0_any=0xFB; b1_any=0xA2; b2_0=0 & MEMINC2_SIMM8_RREG_HI_D7 & FDM2_D789 { FDM2_D789 = MEMINC2_SIMM8_RREG_HI_D7; local inc:4 = "
+        + inc_simm8
+        + "; "
+        + postinc_rhi
+        + " }",
         ":fmov MEM_IMM8_SP_HI_D7, FDM2_D789 is b0_any=0xFB; b1_any=0xA4; b2_0=0 & MEM_IMM8_SP_HI_D7 & FDM2_D789 { FDM2_D789 = MEM_IMM8_SP_HI_D7; }",
         ":fmov FDM3_D789, MEM_SD8_RREG_D7 is b0_any=0xFB; b1_any=0xB0; b2_4=0 & FDM3_D789; MEM_SD8_RREG_D7 { MEM_SD8_RREG_D7 = FDM3_D789; }",
-        ":fmov FDM3_D789, MEMINC2_SIMM8_RREG_D7 is b0_any=0xFB; b1_any=0xB1; b2_4=0 & FDM3_D789; MEMINC2_SIMM8_RREG_D7 { MEMINC2_SIMM8_RREG_D7 = FDM3_D789; local inc:4 = sext(b3_simm); RREG_B2_LO = RREG_B2_LO + inc; }",
+        ":fmov FDM3_D789, MEMINC2_SIMM8_RREG_D7 is b0_any=0xFB; b1_any=0xB1; b2_4=0 & FDM3_D789; MEMINC2_SIMM8_RREG_D7 { MEMINC2_SIMM8_RREG_D7 = FDM3_D789; local inc:4 = "
+        + inc_simm8
+        + "; "
+        + postinc_rlo
+        + " }",
         ":fmov FDM3_D789, MEM_IMM8_SP_D7 is b0_any=0xFB; b1_any=0xB4; b2_4=0 & FDM3_D789; MEM_IMM8_SP_D7 { MEM_IMM8_SP_D7 = FDM3_D789; }",
         ":fmov MEM_SD24_RREG_HI_D8, FSM2_D789 is b0_any=0xFD; b1_any=0x20; MEM_SD24_RREG_HI_D8 & FSM2_D789 { FSM2_D789 = MEM_SD24_RREG_HI_D8; }",
-        ":fmov MEMINC2_IMM24_RREG_HI_D8, FSM2_D789 is b0_any=0xFD; b1_any=0x22; MEMINC2_IMM24_RREG_HI_D8 & FSM2_D789 { FSM2_D789 = MEMINC2_IMM24_RREG_HI_D8; local inc:4 = zext(b3_any) | (zext(b4_any) << 8) | (zext(b5_any) << 16); RREG_B2_HI = RREG_B2_HI + inc; }",
+        ":fmov MEMINC2_IMM24_RREG_HI_D8, FSM2_D789 is b0_any=0xFD; b1_any=0x22; MEMINC2_IMM24_RREG_HI_D8 & FSM2_D789 { FSM2_D789 = MEMINC2_IMM24_RREG_HI_D8; local inc:4 = "
+        + inc_u24
+        + "; "
+        + postinc_rhi
+        + " }",
         ":fmov MEM_IMM24_SP_HI_D8, FSM2_D789 is b0_any=0xFD; b1_any=0x24; MEM_IMM24_SP_HI_D8 & FSM2_D789 { FSM2_D789 = MEM_IMM24_SP_HI_D8; }",
         ":fmov FSM3_D789, MEM_SD24_RREG_D8 is b0_any=0xFD; b1_any=0x30; FSM3_D789 & MEM_SD24_RREG_D8 { MEM_SD24_RREG_D8 = FSM3_D789; }",
-        ":fmov FSM3_D789, MEMINC2_IMM24_RREG_D8 is b0_any=0xFD; b1_any=0x31; FSM3_D789 & MEMINC2_IMM24_RREG_D8 { MEMINC2_IMM24_RREG_D8 = FSM3_D789; local inc:4 = zext(b3_any) | (zext(b4_any) << 8) | (zext(b5_any) << 16); RREG_B2_LO = RREG_B2_LO + inc; }",
+        ":fmov FSM3_D789, MEMINC2_IMM24_RREG_D8 is b0_any=0xFD; b1_any=0x31; FSM3_D789 & MEMINC2_IMM24_RREG_D8 { MEMINC2_IMM24_RREG_D8 = FSM3_D789; local inc:4 = "
+        + inc_u24
+        + "; "
+        + postinc_rlo
+        + " }",
         ":fmov FSM3_D789, MEM_IMM24_SP_D8 is b0_any=0xFD; b1_any=0x34; FSM3_D789 & MEM_IMM24_SP_D8 { MEM_IMM24_SP_D8 = FSM3_D789; }",
         ":fmov MEM_SD24_RREG_HI_D8, FDM2_D789 is b0_any=0xFD; b1_any=0xA0; b2_0=0 & MEM_SD24_RREG_HI_D8 & FDM2_D789 { FDM2_D789 = MEM_SD24_RREG_HI_D8; }",
-        ":fmov MEMINC2_IMM24_RREG_HI_D8, FDM2_D789 is b0_any=0xFD; b1_any=0xA2; b2_0=0 & MEMINC2_IMM24_RREG_HI_D8 & FDM2_D789 { FDM2_D789 = MEMINC2_IMM24_RREG_HI_D8; local inc:4 = zext(b3_any) | (zext(b4_any) << 8) | (zext(b5_any) << 16); RREG_B2_HI = RREG_B2_HI + inc; }",
+        ":fmov MEMINC2_IMM24_RREG_HI_D8, FDM2_D789 is b0_any=0xFD; b1_any=0xA2; b2_0=0 & MEMINC2_IMM24_RREG_HI_D8 & FDM2_D789 { FDM2_D789 = MEMINC2_IMM24_RREG_HI_D8; local inc:4 = "
+        + inc_u24
+        + "; "
+        + postinc_rhi
+        + " }",
         ":fmov MEM_IMM24_SP_HI_D8, FDM2_D789 is b0_any=0xFD; b1_any=0xA4; b2_0=0 & MEM_IMM24_SP_HI_D8 & FDM2_D789 { FDM2_D789 = MEM_IMM24_SP_HI_D8; }",
         ":fmov FDM3_D789, MEM_SD24_RREG_D8 is b0_any=0xFD; b1_any=0xB0; b2_4=0 & FDM3_D789 & MEM_SD24_RREG_D8 { MEM_SD24_RREG_D8 = FDM3_D789; }",
-        ":fmov FDM3_D789, MEMINC2_IMM24_RREG_D8 is b0_any=0xFD; b1_any=0xB1; b2_4=0 & FDM3_D789 & MEMINC2_IMM24_RREG_D8 { MEMINC2_IMM24_RREG_D8 = FDM3_D789; local inc:4 = zext(b3_any) | (zext(b4_any) << 8) | (zext(b5_any) << 16); RREG_B2_LO = RREG_B2_LO + inc; }",
+        ":fmov FDM3_D789, MEMINC2_IMM24_RREG_D8 is b0_any=0xFD; b1_any=0xB1; b2_4=0 & FDM3_D789 & MEMINC2_IMM24_RREG_D8 { MEMINC2_IMM24_RREG_D8 = FDM3_D789; local inc:4 = "
+        + inc_u24
+        + "; "
+        + postinc_rlo
+        + " }",
         ":fmov FDM3_D789, MEM_IMM24_SP_D8 is b0_any=0xFD; b1_any=0xB4; b2_4=0 & FDM3_D789 & MEM_IMM24_SP_D8 { MEM_IMM24_SP_D8 = FDM3_D789; }",
         ":fmov IMM32_B2345, FPCR is b0_any=0xFD; b1_any=0xB5; IMM32_B2345 { FPCR = IMM32_B2345; }",
         ":fmov MEM_IMM32HI8_RREG_HI_D9, FSM2_D789 is b0_any=0xFE; b1_any=0x20; MEM_IMM32HI8_RREG_HI_D9 & FSM2_D789 { FSM2_D789 = MEM_IMM32HI8_RREG_HI_D9; }",
-        ":fmov MEMINC2_IMM32HI8_RREG_HI_D9, FSM2_D789 is b0_any=0xFE; b1_any=0x22; MEMINC2_IMM32HI8_RREG_HI_D9 & FSM2_D789 { FSM2_D789 = MEMINC2_IMM32HI8_RREG_HI_D9; local inc:4 = zext(b3_any) | (zext(b4_any) << 8) | (zext(b5_any) << 16) | (zext(b6_any) << 24); RREG_B2_HI = RREG_B2_HI + inc; }",
+        ":fmov MEMINC2_IMM32HI8_RREG_HI_D9, FSM2_D789 is b0_any=0xFE; b1_any=0x22; MEMINC2_IMM32HI8_RREG_HI_D9 & FSM2_D789 { FSM2_D789 = MEMINC2_IMM32HI8_RREG_HI_D9; local inc:4 = "
+        + inc_u32
+        + "; "
+        + postinc_rhi
+        + " }",
         ":fmov MEM_IMM32HI8_SP_HI_D9, FSM2_D789 is b0_any=0xFE; b1_any=0x24; MEM_IMM32HI8_SP_HI_D9 & FSM2_D789 { FSM2_D789 = MEM_IMM32HI8_SP_HI_D9; }",
         ":fmov IMM32HI8_B3456, FSM2_D789 is b0_any=0xFE; b1_any=0x26; b2_7=0 & b2_6=0 & b2_5=0 & b2_4=0 & FSM2_D789; IMM32HI8_B3456 { FSM2_D789 = IMM32HI8_B3456; }",
         ":fmov FSM3_D789, MEM_IMM32HI8_RREG_D9 is b0_any=0xFE; b1_any=0x30; FSM3_D789 & MEM_IMM32HI8_RREG_D9 { MEM_IMM32HI8_RREG_D9 = FSM3_D789; }",
-        ":fmov FSM3_D789, MEMINC2_IMM32HI8_RREG_D9 is b0_any=0xFE; b1_any=0x31; FSM3_D789 & MEMINC2_IMM32HI8_RREG_D9 { MEMINC2_IMM32HI8_RREG_D9 = FSM3_D789; local inc:4 = zext(b3_any) | (zext(b4_any) << 8) | (zext(b5_any) << 16) | (zext(b6_any) << 24); RREG_B2_LO = RREG_B2_LO + inc; }",
+        ":fmov FSM3_D789, MEMINC2_IMM32HI8_RREG_D9 is b0_any=0xFE; b1_any=0x31; FSM3_D789 & MEMINC2_IMM32HI8_RREG_D9 { MEMINC2_IMM32HI8_RREG_D9 = FSM3_D789; local inc:4 = "
+        + inc_u32
+        + "; "
+        + postinc_rlo
+        + " }",
         ":fmov FSM3_D789, MEM_IMM32HI8_SP_D9 is b0_any=0xFE; b1_any=0x34; FSM3_D789 & MEM_IMM32HI8_SP_D9 { MEM_IMM32HI8_SP_D9 = FSM3_D789; }",
         ":fmov MEM_IMM32HI8_RREG_HI_D9, FDM2_D789 is b0_any=0xFE; b1_any=0x40; b2_0=0 & MEM_IMM32HI8_RREG_HI_D9 & FDM2_D789 { FDM2_D789 = MEM_IMM32HI8_RREG_HI_D9; }",
-        ":fmov MEMINC2_IMM32HI8_RREG_HI_D9, FDM2_D789 is b0_any=0xFE; b1_any=0x42; b2_0=0 & MEMINC2_IMM32HI8_RREG_HI_D9 & FDM2_D789 { FDM2_D789 = MEMINC2_IMM32HI8_RREG_HI_D9; local inc:4 = zext(b3_any) | (zext(b4_any) << 8) | (zext(b5_any) << 16) | (zext(b6_any) << 24); RREG_B2_HI = RREG_B2_HI + inc; }",
+        ":fmov MEMINC2_IMM32HI8_RREG_HI_D9, FDM2_D789 is b0_any=0xFE; b1_any=0x42; b2_0=0 & MEMINC2_IMM32HI8_RREG_HI_D9 & FDM2_D789 { FDM2_D789 = MEMINC2_IMM32HI8_RREG_HI_D9; local inc:4 = "
+        + inc_u32
+        + "; "
+        + postinc_rhi
+        + " }",
         ":fmov MEM_IMM32HI8_SP_HI_D9, FDM2_D789 is b0_any=0xFE; b1_any=0x44; b2_0=0 & MEM_IMM32HI8_SP_HI_D9 & FDM2_D789 { FDM2_D789 = MEM_IMM32HI8_SP_HI_D9; }",
         ":fmov FDM3_D789, MEM_IMM32HI8_RREG_D9 is b0_any=0xFE; b1_any=0x50; b2_4=0 & FDM3_D789 & MEM_IMM32HI8_RREG_D9 { MEM_IMM32HI8_RREG_D9 = FDM3_D789; }",
-        ":fmov FDM3_D789, MEMINC2_IMM32HI8_RREG_D9 is b0_any=0xFE; b1_any=0x51; b2_4=0 & FDM3_D789 & MEMINC2_IMM32HI8_RREG_D9 { MEMINC2_IMM32HI8_RREG_D9 = FDM3_D789; local inc:4 = zext(b3_any) | (zext(b4_any) << 8) | (zext(b5_any) << 16) | (zext(b6_any) << 24); RREG_B2_LO = RREG_B2_LO + inc; }",
+        ":fmov FDM3_D789, MEMINC2_IMM32HI8_RREG_D9 is b0_any=0xFE; b1_any=0x51; b2_4=0 & FDM3_D789 & MEMINC2_IMM32HI8_RREG_D9 { MEMINC2_IMM32HI8_RREG_D9 = FDM3_D789; local inc:4 = "
+        + inc_u32
+        + "; "
+        + postinc_rlo
+        + " }",
         ":fmov FDM3_D789, MEM_IMM32HI8_SP_D9 is b0_any=0xFE; b1_any=0x54; b2_4=0 & FDM3_D789 & MEM_IMM32HI8_SP_D9 { MEM_IMM32HI8_SP_D9 = FDM3_D789; }",
     ]
     lines.extend(fmov_phase313)

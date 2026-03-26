@@ -150,7 +150,8 @@ historical reference.
 - The remaining open work is mostly semantic and release-quality; the current
   demo/firmware/real-blob corpora are decode-clean.
 - `MEMINC`/`MEMINC2` and `fmov` post-increment behavior is modeled explicitly,
-  but the exact hardware intent is still inferred from opcode layout.
+  with the remaining displacement-width bookkeeping centralized in the generator;
+  the exact hardware intent is still inferred from opcode layout.
 - Some advanced AM33 pair-op aliases and undefined opcode families are still fallback for now
 - Memory-form `add/sub/cmp` semantics are still intentionally minimal
 - `bnc`/`bns` condition mapping currently follows MN102-style `NF` behavior (inference)
