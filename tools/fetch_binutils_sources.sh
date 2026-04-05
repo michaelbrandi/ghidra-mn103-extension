@@ -10,11 +10,19 @@ fetch_one() {
   local out="$2"
   local b64="$out.b64"
   curl -L "$url" -o "$b64"
-  if base64 -D -i "$b64" -o "$out" 2>/dev/null; then
-    :
-  else
-    base64 --decode "$b64" > "$out"
-  fi
+  python3 - "$b64" "$out" <<'PY'
+from __future__ import annotations
+
+import base64
+import sys
+from pathlib import Path
+
+src = Path(sys.argv[1])
+dst = Path(sys.argv[2])
+data = src.read_bytes()
+decoded = base64.b64decode(b"".join(data.split()))
+dst.write_bytes(decoded)
+PY
 }
 
 fetch_one "https://android.googlesource.com/toolchain/binutils/+/eclair/binutils-2.17/opcodes/m10300-opc.c?format=TEXT" "$OUT_DIR/m10300-opc.c"
