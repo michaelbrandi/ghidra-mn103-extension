@@ -56,8 +56,8 @@ jobs:
         run: |
           set -euo pipefail
           GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC"
-          ZIP_PATH="$(ls -1t dist/ghidra_*_ghidra-mn103.zip | head -n 1)"
-          test -f "${ZIP_PATH}"
+          ZIP_PATH="$(find . -type f -name 'ghidra_*_ghidra-mn103.zip' | sort | tail -n 1)"
+          test -n "${ZIP_PATH}"
           rm -rf "${GHIDRA_INSTALL_DIR}/Extensions/ghidra-mn103"
           mkdir -p "${GHIDRA_INSTALL_DIR}/Extensions"
           unzip -q "${ZIP_PATH}" -d "${GHIDRA_INSTALL_DIR}/Extensions"
