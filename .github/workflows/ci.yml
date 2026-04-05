@@ -77,11 +77,11 @@ jobs:
 
       - name: Smoke-test headless analysis
         shell: bash
-        run: GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" ./tools/run_firmware_profile.sh "${RUNNER_TEMP}/tmp_mn103_samples" "${RUNNER_TEMP}/mn103_ci_smoke"
+        run: GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" GHIDRA_USER_HOME="${RUNNER_TEMP}/ghidra-user-smoke" ./tools/run_firmware_profile.sh "${RUNNER_TEMP}/tmp_mn103_samples" "${RUNNER_TEMP}/mn103_ci_smoke"
 
       - name: Golden-test instruction demo
         shell: bash
-        run: GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" ./tools/run_instruction_golden.sh "${RUNNER_TEMP}/tmp_mn103_linux416" "${RUNNER_TEMP}/mn103_ci_golden"
+        run: GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" GHIDRA_USER_HOME="${RUNNER_TEMP}/ghidra-user-golden" ./tools/run_instruction_golden.sh "${RUNNER_TEMP}/tmp_mn103_linux416" "${RUNNER_TEMP}/mn103_ci_golden"
 
       - name: Upload packaged extension
         uses: actions/upload-artifact@v4
