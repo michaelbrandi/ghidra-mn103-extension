@@ -81,7 +81,41 @@ jobs:
 
       - name: Golden-test instruction demo
         shell: bash
-        run: HOME="${RUNNER_TEMP}/home-golden" GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" GHIDRA_USER_HOME="${RUNNER_TEMP}/ghidra-user-golden" ./tools/run_instruction_golden.sh "${RUNNER_TEMP}/tmp_mn103_linux416" "${RUNNER_TEMP}/mn103_ci_golden"
+        run: |
+          set -euo pipefail
+          TMP_LINUX="${RUNNER_TEMP}/tmp_mn103_linux416"
+          TMP_GOLDEN="${RUNNER_TEMP}/mn103_ci_golden"
+          mkdir -p "${TMP_GOLDEN}/logs" "${TMP_GOLDEN}/projects"
+          python3 tools/make_mn103_instruction_demo.py \
+            --symbols-dir "${TMP_LINUX}/ghidra_symbols" \
+            --out-dir "${TMP_GOLDEN}/demo"
+          sync
+          "${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC/support/analyzeHeadless" \
+            "${TMP_GOLDEN}/projects" \
+            mn103_instruction_mix_demo \
+            -import "${TMP_GOLDEN}/demo/mn103_instruction_mix_demo.elf" \
+            -loader ElfLoader \
+            -overwrite \
+            -analysisTimeoutPerFile 180 \
+            -postScript PrintEntryInstructions.java \
+            -scriptPath "./tools/ghidra_scripts" \
+            > "${TMP_GOLDEN}/logs/instruction_golden.log" 2>&1
+          required_lines=(
+            "00002000: mov 0x31,D0"
+            "00002002: mov 0x64,A0"
+            "00002004: mov 0x1000,D0"
+            "00002010: mov (A0),A1"
+            "0000201c: fmov R5,FPCR"
+            "0000201f: add 0x12340000,D0"
+            "00002025: cmp 0xaa0000,D0"
+            "0000202d: add 0x22,SP"
+            "0000203a: xor 0xf0f,D0"
+            "0000203e: bra 0x0000203e"
+          )
+          for needle in "${required_lines[@]}"; do
+            grep -Fq "${needle}" "${TMP_GOLDEN}/logs/instruction_golden.log"
+          done
+          grep -Fq "Printed 19 instructions" "${TMP_GOLDEN}/logs/instruction_golden.log"
 
       - name: Upload packaged extension
         uses: actions/upload-artifact@v4
