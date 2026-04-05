@@ -34,9 +34,14 @@ fi
 cd "${EXT_DIR}"
 "${GRADLEW}" buildExtension
 
-LATEST_ZIP="$(ls -1t dist/ghidra_*_ghidra-mn103.zip 2>/dev/null | head -n 1 || true)"
-if [[ -n "${LATEST_ZIP}" ]]; then
-  echo "Built: ${LATEST_ZIP}"
-else
-  echo "Built extension zip in dist/."
+LATEST_ZIP="$(ls -1t dist/ghidra_*_ghidra-mn103*.zip 2>/dev/null | head -n 1 || true)"
+if [[ -z "${LATEST_ZIP}" ]]; then
+  echo "error: buildExtension did not produce a packaged zip in dist/." >&2
+  exit 1
 fi
+
+CANONICAL_ZIP="${EXT_DIR}/dist/ghidra-mn103-extension.zip"
+cp -f "${LATEST_ZIP}" "${CANONICAL_ZIP}"
+
+echo "Built: ${LATEST_ZIP}"
+echo "Canonical: ${CANONICAL_ZIP}"

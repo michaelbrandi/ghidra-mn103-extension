@@ -30,8 +30,15 @@ GitHub Actions now runs a clean-clone CI path on every push and pull request:
 
 - verify the checked-in `mn103.slaspec` still matches regenerated output from a
   pinned GNU binutils opcode snapshot stored in the repo
-- build the extension package against Ghidra 12.0.4
+- build the extension package against Ghidra 12.0.4 and publish a canonical
+  `dist/ghidra-mn103-extension.zip` artifact alias
 - generate a synthetic MN103 demo corpus and run a headless smoke analysis
+- run a small exact-match instruction golden demo so decoder drift shows up
+  immediately, not just as a lower unknown-byte count
+
+The local full gate in `tools/check_mn103_corpus.sh` also records per-stage
+timings in `tmp_mn103_headless/mn103_gate/performance_metrics.txt` so you can
+compare baseline runtime over time.
 
 The heavier corpus gates remain available locally through the scripts in
 `tools/`, which is still the best place to run the full validation set before a

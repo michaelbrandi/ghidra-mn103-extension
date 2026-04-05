@@ -56,8 +56,8 @@ jobs:
         run: |
           set -euo pipefail
           GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC"
-          ZIP_PATH="$(find . -type f -name 'ghidra_*_ghidra-mn103*.zip' | sort | tail -n 1)"
-          test -n "${ZIP_PATH}"
+          ZIP_PATH="./dist/ghidra-mn103-extension.zip"
+          test -f "${ZIP_PATH}"
           rm -rf "${GHIDRA_INSTALL_DIR}/Extensions/ghidra-mn103"
           mkdir -p "${GHIDRA_INSTALL_DIR}/Extensions"
           unzip -q "${ZIP_PATH}" -d "${GHIDRA_INSTALL_DIR}/Extensions"
@@ -79,9 +79,13 @@ jobs:
         shell: bash
         run: GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" ./tools/run_firmware_profile.sh "${RUNNER_TEMP}/tmp_mn103_samples" "${RUNNER_TEMP}/mn103_ci_smoke"
 
+      - name: Golden-test instruction demo
+        shell: bash
+        run: GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" ./tools/run_instruction_golden.sh "${RUNNER_TEMP}/tmp_mn103_linux416" "${RUNNER_TEMP}/mn103_ci_golden"
+
       - name: Upload packaged extension
         uses: actions/upload-artifact@v4
         with:
           name: ghidra-mn103-extension
-          path: dist/ghidra_*_ghidra-mn103*.zip
+          path: dist/ghidra-mn103-extension.zip
           if-no-files-found: error
