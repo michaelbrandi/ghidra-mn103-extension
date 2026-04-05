@@ -1,0 +1,86 @@
+name: MN103 CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: mn103-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GHIDRA_ZIP_URL: https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_12.0.4_build/ghidra_12.0.4_PUBLIC_20260303.zip
+      GHIDRA_INSTALL_DIR: ${{ runner.temp }}/ghidra_12.0.4_PUBLIC
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Download Ghidra 12.0.4
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL "${GHIDRA_ZIP_URL}" -o "${RUNNER_TEMP}/ghidra.zip"
+          unzip -q "${RUNNER_TEMP}/ghidra.zip" -d "${RUNNER_TEMP}"
+          test -x "${GHIDRA_INSTALL_DIR}/support/analyzeHeadless"
+          test -x "${GHIDRA_INSTALL_DIR}/support/gradle/gradlew"
+
+      - name: Verify generated spec matches the checked-in spec
+        shell: bash
+        run: |
+          set -euo pipefail
+          TMP_BINUTILS="${RUNNER_TEMP}/tmp_mn103_binutils"
+          ./tools/fetch_binutils_sources.sh "${TMP_BINUTILS}"
+          python3 tools/gen_mn103_slaspec.py \
+            --opc-source "${TMP_BINUTILS}/m10300-opc.c" \
+            --out "${RUNNER_TEMP}/mn103.generated.slaspec"
+          diff -u data/languages/mn103.slaspec "${RUNNER_TEMP}/mn103.generated.slaspec"
+
+      - name: Build extension package
+        shell: bash
+        run: ./tools/rebuild_mn103_extension.sh
+
+      - name: Install the built extension into Ghidra
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "${GHIDRA_INSTALL_DIR}/Extensions/ghidra-mn103"
+          mkdir -p "${GHIDRA_INSTALL_DIR}/Extensions"
+          unzip -q dist/ghidra_*_ghidra-mn103.zip -d "${GHIDRA_INSTALL_DIR}/Extensions"
+          test -f "${GHIDRA_INSTALL_DIR}/Extensions/ghidra-mn103/data/languages/mn103.slaspec"
+
+      - name: Build smoke-test demo corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          TMP_LINUX="${RUNNER_TEMP}/tmp_mn103_linux416"
+          ./tools/fetch_linux_mn103_refs.sh "${TMP_LINUX}"
+          python3 tools/extract_linux_mn103_symbols.py --linux-root "${TMP_LINUX}"
+          python3 tools/make_mn103_demo_binary.py \
+            --symbols-dir "${TMP_LINUX}/ghidra_symbols" \
+            --out-dir "${RUNNER_TEMP}/tmp_mn103_samples" \
+            --name mn103_ci_demo
+
+      - name: Smoke-test headless analysis
+        shell: bash
+        run: ./tools/run_firmware_profile.sh "${RUNNER_TEMP}/tmp_mn103_samples" "${RUNNER_TEMP}/mn103_ci_smoke"
+
+      - name: Upload packaged extension
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghidra-mn103-extension
+          path: dist/ghidra_*_ghidra-mn103.zip
+          if-no-files-found: error

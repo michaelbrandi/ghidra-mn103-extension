@@ -24,6 +24,19 @@ The larger development snapshot is preserved as:
 
 That archival file is not selected by `mn103.ldefs`.
 
+## Continuous Integration
+
+GitHub Actions now runs a clean-clone CI path on every push and pull request:
+
+- verify the checked-in `mn103.slaspec` still matches regenerated output from
+  the upstream GNU binutils opcode metadata
+- build the extension package against Ghidra 12.0.4
+- generate a synthetic MN103 demo corpus and run a headless smoke analysis
+
+The heavier corpus gates remain available locally through the scripts in
+`tools/`, which is still the best place to run the full validation set before a
+release.
+
 ## What this gives you now
 
 Current active default (`mn103.slaspec`) provides:
