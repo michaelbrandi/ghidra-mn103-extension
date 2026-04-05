@@ -36,16 +36,19 @@ mkdir -p "${DEMO_DIR}"
 python3 "${TOOLS_DIR}/make_mn103_instruction_demo.py" \
   --symbols-dir "${SYMBOLS_DIR}" \
   --out-dir "${DEMO_DIR}"
+sync
 
 PROJECT_NAME="mn103_instruction_mix_demo"
 rm -rf "${PROJECTS_DIR}/${PROJECT_NAME}.gpr" "${PROJECTS_DIR}/${PROJECT_NAME}.rep"
 
 # Force the ELF loader so headless import stays deterministic on fresh
-# settings dirs. The synthetic demo ELF carries the correct machine ID, so the
-# loader can still auto-select the MN103 language once imported.
+# settings dirs. The synthetic demo ELF carries the correct machine ID, and
+# the processor is pinned explicitly so Ghidra never has to guess the load
+# spec from per-user opinion state.
 if ! "${ANALYZE}" "${PROJECTS_DIR}" "${PROJECT_NAME}" \
     -import "${DEMO_DIR}/mn103_instruction_mix_demo.elf" \
     -loader "ElfLoader" \
+    -processor "mn10300:LE:32:default" \
     -overwrite \
     -analysisTimeoutPerFile 180 \
     -postScript "PrintEntryInstructions.java" \
