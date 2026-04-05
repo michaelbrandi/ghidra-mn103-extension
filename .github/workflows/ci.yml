@@ -17,7 +17,6 @@ jobs:
     timeout-minutes: 60
     env:
       GHIDRA_ZIP_URL: https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_12.0.4_build/ghidra_12.0.4_PUBLIC_20260303.zip
-      GHIDRA_INSTALL_DIR: ${{ runner.temp }}/ghidra_12.0.4_PUBLIC
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -33,6 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC"
           curl -fsSL "${GHIDRA_ZIP_URL}" -o "${RUNNER_TEMP}/ghidra.zip"
           unzip -q "${RUNNER_TEMP}/ghidra.zip" -d "${RUNNER_TEMP}"
           test -x "${GHIDRA_INSTALL_DIR}/support/analyzeHeadless"
@@ -51,12 +51,13 @@ jobs:
 
       - name: Build extension package
         shell: bash
-        run: ./tools/rebuild_mn103_extension.sh
+        run: GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" ./tools/rebuild_mn103_extension.sh
 
       - name: Install the built extension into Ghidra
         shell: bash
         run: |
           set -euo pipefail
+          GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC"
           rm -rf "${GHIDRA_INSTALL_DIR}/Extensions/ghidra-mn103"
           mkdir -p "${GHIDRA_INSTALL_DIR}/Extensions"
           unzip -q dist/ghidra_*_ghidra-mn103.zip -d "${GHIDRA_INSTALL_DIR}/Extensions"
@@ -76,7 +77,7 @@ jobs:
 
       - name: Smoke-test headless analysis
         shell: bash
-        run: ./tools/run_firmware_profile.sh "${RUNNER_TEMP}/tmp_mn103_samples" "${RUNNER_TEMP}/mn103_ci_smoke"
+        run: GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" ./tools/run_firmware_profile.sh "${RUNNER_TEMP}/tmp_mn103_samples" "${RUNNER_TEMP}/mn103_ci_smoke"
 
       - name: Upload packaged extension
         uses: actions/upload-artifact@v4
