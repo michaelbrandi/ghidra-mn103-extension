@@ -83,5 +83,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ghidra-mn103-extension
-          path: dist/ghidra_*_ghidra-mn103.zip
+          path: dist/ghidra_*_ghidra-mn103*.zip
           if-no-files-found: error
