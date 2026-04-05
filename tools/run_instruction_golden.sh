@@ -6,6 +6,7 @@ EXT_DIR="$(cd "${TOOLS_DIR}/.." && pwd)"
 WS_DIR="$(cd "${EXT_DIR}/.." && pwd)"
 
 GHIDRA_INSTALL_DIR="${GHIDRA_INSTALL_DIR:-${HOME}/Applications/ghidra_12.0.4_PUBLIC}"
+export GHIDRA_INSTALL_DIR
 ANALYZE="${GHIDRA_INSTALL_DIR}/support/analyzeHeadless"
 SCRIPT_DIR="${TOOLS_DIR}/ghidra_scripts"
 
