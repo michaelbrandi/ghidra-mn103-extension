@@ -42,10 +42,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TMP_BINUTILS="${RUNNER_TEMP}/tmp_mn103_binutils"
-          ./tools/fetch_binutils_sources.sh "${TMP_BINUTILS}"
           python3 tools/gen_mn103_slaspec.py \
-            --opc-source "${TMP_BINUTILS}/m10300-opc.c" \
+            --opc-source tools/vendor/binutils/m10300-opc.c \
             --out "${RUNNER_TEMP}/mn103.generated.slaspec"
           diff -u data/languages/mn103.slaspec "${RUNNER_TEMP}/mn103.generated.slaspec"
 

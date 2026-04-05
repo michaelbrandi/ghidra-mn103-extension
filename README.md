@@ -28,8 +28,8 @@ That archival file is not selected by `mn103.ldefs`.
 
 GitHub Actions now runs a clean-clone CI path on every push and pull request:
 
-- verify the checked-in `mn103.slaspec` still matches regenerated output from
-  the upstream GNU binutils opcode metadata
+- verify the checked-in `mn103.slaspec` still matches regenerated output from a
+  pinned GNU binutils opcode snapshot stored in the repo
 - build the extension package against Ghidra 12.0.4
 - generate a synthetic MN103 demo corpus and run a headless smoke analysis
 
