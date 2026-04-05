@@ -40,12 +40,14 @@ python3 "${TOOLS_DIR}/make_mn103_instruction_demo.py" \
 PROJECT_NAME="mn103_instruction_mix_demo"
 rm -rf "${PROJECTS_DIR}/${PROJECT_NAME}.gpr" "${PROJECTS_DIR}/${PROJECT_NAME}.rep"
 
+# Let the ELF loader auto-select the MN103 language. Passing the processor
+# explicitly has been flaky on fresh headless settings dirs, even though the
+# synthetic demo ELF carries the correct machine ID.
 if ! "${ANALYZE}" "${PROJECTS_DIR}" "${PROJECT_NAME}" \
     -import "${DEMO_DIR}/mn103_instruction_mix_demo.elf" \
-    -processor "mn10300:LE:32:default" \
     -overwrite \
     -analysisTimeoutPerFile 180 \
-    -postScript "${SCRIPT_DIR}/PrintEntryInstructions.java" \
+    -postScript "PrintEntryInstructions.java" \
     -scriptPath "${SCRIPT_DIR}" \
     > "${LOG}" 2>&1; then
   echo "error: headless analysis failed for instruction golden demo" >&2
