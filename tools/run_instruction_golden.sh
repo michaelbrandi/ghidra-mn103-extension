@@ -40,11 +40,12 @@ python3 "${TOOLS_DIR}/make_mn103_instruction_demo.py" \
 PROJECT_NAME="mn103_instruction_mix_demo"
 rm -rf "${PROJECTS_DIR}/${PROJECT_NAME}.gpr" "${PROJECTS_DIR}/${PROJECT_NAME}.rep"
 
-# Let the ELF loader auto-select the MN103 language. Passing the processor
-# explicitly has been flaky on fresh headless settings dirs, even though the
-# synthetic demo ELF carries the correct machine ID.
+# Force the ELF loader so headless import stays deterministic on fresh
+# settings dirs. The synthetic demo ELF carries the correct machine ID, so the
+# loader can still auto-select the MN103 language once imported.
 if ! "${ANALYZE}" "${PROJECTS_DIR}" "${PROJECT_NAME}" \
     -import "${DEMO_DIR}/mn103_instruction_mix_demo.elf" \
+    -loader "ElfLoader" \
     -overwrite \
     -analysisTimeoutPerFile 180 \
     -postScript "PrintEntryInstructions.java" \
