@@ -73,8 +73,7 @@ jobs:
           python3 tools/extract_linux_mn103_symbols.py --linux-root "${TMP_LINUX}"
           python3 tools/make_mn103_demo_binary.py \
             --symbols-dir "${TMP_LINUX}/ghidra_symbols" \
-            --out-dir "${RUNNER_TEMP}/tmp_mn103_samples" \
-            --name mn103_ci_demo
+            --out-dir "${RUNNER_TEMP}/tmp_mn103_samples"
 
       - name: Smoke-test headless analysis
         shell: bash
