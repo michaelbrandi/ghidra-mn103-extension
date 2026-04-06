@@ -41,13 +41,11 @@ sync
 PROJECT_NAME="mn103_instruction_mix_demo"
 rm -rf "${PROJECTS_DIR}/${PROJECT_NAME}.gpr" "${PROJECTS_DIR}/${PROJECT_NAME}.rep"
 
-# Force the ELF loader so headless import stays deterministic on fresh
-# settings dirs. The synthetic demo ELF carries the correct machine ID, and
-# the processor is pinned explicitly so Ghidra never has to guess the load
-# spec from per-user opinion state.
+# Pin the processor explicitly so headless import stays deterministic on
+# fresh settings dirs. The synthetic demo ELF carries the correct machine ID,
+# and the processor choice is the same one used by the smoke corpus.
 if ! "${ANALYZE}" "${PROJECTS_DIR}" "${PROJECT_NAME}" \
     -import "${DEMO_DIR}/mn103_instruction_mix_demo.elf" \
-    -loader "ElfLoader" \
     -processor "mn10300:LE:32:default" \
     -overwrite \
     -analysisTimeoutPerFile 180 \
