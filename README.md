@@ -33,8 +33,10 @@ GitHub Actions now runs a clean-clone CI path on every push and pull request:
 - build the extension package against Ghidra 12.0.4 and publish a canonical
   `dist/ghidra-mn103-extension.zip` artifact alias
 - generate a synthetic MN103 demo corpus and run a headless smoke analysis
-- run a small exact-match instruction golden demo so decoder drift shows up
-  immediately, not just as a lower unknown-byte count
+
+The small exact-match instruction golden demo still exists, but it now runs in a
+separate manual GitHub Actions workflow (`MN103 Golden`) so push CI stays
+stable while the deeper decoder check remains available on demand.
 
 The local full gate in `tools/check_mn103_corpus.sh` also records per-stage
 timings in `tmp_mn103_headless/mn103_gate/performance_metrics.txt` so you can

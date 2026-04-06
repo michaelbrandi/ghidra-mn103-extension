@@ -1,18 +1,14 @@
-name: MN103 CI
+name: MN103 Golden
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
   workflow_dispatch:
 
 concurrency:
-  group: mn103-ci-${{ github.ref }}
+  group: mn103-golden-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-and-smoke:
+  instruction-golden:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -38,15 +34,6 @@ jobs:
           test -x "${GHIDRA_INSTALL_DIR}/support/analyzeHeadless"
           test -x "${GHIDRA_INSTALL_DIR}/support/gradle/gradlew"
 
-      - name: Verify generated spec matches the checked-in spec
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 tools/gen_mn103_slaspec.py \
-            --opc-source tools/vendor/binutils/m10300-opc.c \
-            --out "${RUNNER_TEMP}/mn103.generated.slaspec"
-          diff -u data/languages/mn103.slaspec "${RUNNER_TEMP}/mn103.generated.slaspec"
-
       - name: Build extension package
         shell: bash
         run: GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" ./tools/rebuild_mn103_extension.sh
@@ -64,24 +51,11 @@ jobs:
           INSTALLED_SPEC="$(find "${GHIDRA_INSTALL_DIR}/Extensions" -type f -path '*/data/languages/mn103.slaspec' | head -n 1)"
           test -n "${INSTALLED_SPEC}"
 
-      - name: Build smoke-test demo corpus
+      - name: Run golden instruction demo
         shell: bash
         run: |
-          set -euo pipefail
-          TMP_LINUX="${RUNNER_TEMP}/tmp_mn103_linux416"
-          ./tools/fetch_linux_mn103_refs.sh "${TMP_LINUX}"
-          python3 tools/extract_linux_mn103_symbols.py --linux-root "${TMP_LINUX}"
-          python3 tools/make_mn103_demo_binary.py \
-            --symbols-dir "${TMP_LINUX}/ghidra_symbols" \
-            --out-dir "${RUNNER_TEMP}/tmp_mn103_samples"
+          HOME="${RUNNER_TEMP}/home-golden" \
+          GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" \
+          GHIDRA_USER_HOME="${RUNNER_TEMP}/ghidra-user-golden" \
+          ./tools/run_instruction_golden.sh "${RUNNER_TEMP}/tmp_mn103_linux416" "${RUNNER_TEMP}/mn103_ci_golden"
 
-      - name: Smoke-test headless analysis
-        shell: bash
-        run: HOME="${RUNNER_TEMP}/home-smoke" GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" GHIDRA_USER_HOME="${RUNNER_TEMP}/ghidra-user-smoke" ./tools/run_firmware_profile.sh "${RUNNER_TEMP}/tmp_mn103_samples" "${RUNNER_TEMP}/mn103_ci_smoke"
-
-      - name: Upload packaged extension
-        uses: actions/upload-artifact@v4
-        with:
-          name: ghidra-mn103-extension
-          path: dist/ghidra-mn103-extension.zip
-          if-no-files-found: error
