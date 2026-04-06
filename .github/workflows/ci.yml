@@ -77,7 +77,15 @@ jobs:
 
       - name: Smoke-test headless analysis
         shell: bash
-        run: HOME="${RUNNER_TEMP}/home-smoke" GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" GHIDRA_USER_HOME="${RUNNER_TEMP}/ghidra-user-smoke" ./tools/run_firmware_profile.sh "${RUNNER_TEMP}/tmp_mn103_samples" "${RUNNER_TEMP}/mn103_ci_smoke"
+        run: |
+          set -euo pipefail
+          HOME_ROOT="${RUNNER_TEMP}/home-smoke"
+          mkdir -p "${HOME_ROOT}"
+          HOME="${HOME_ROOT}" \
+          GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" \
+          GHIDRA_USER_HOME="${HOME_ROOT}" \
+          JAVA_TOOL_OPTIONS="-Duser.home=${HOME_ROOT}" \
+          ./tools/run_firmware_profile.sh "${RUNNER_TEMP}/tmp_mn103_samples" "${RUNNER_TEMP}/mn103_ci_smoke"
 
       - name: Upload packaged extension
         uses: actions/upload-artifact@v4

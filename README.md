@@ -46,6 +46,10 @@ The heavier corpus gates remain available locally through the scripts in
 `tools/`, which is still the best place to run the full validation set before a
 release.
 
+The headless helper scripts also mirror the installed extension into the active
+Ghidra user settings directory, so clean-headless runs do not depend on a
+prewarmed profile cache.
+
 ## What this gives you now
 
 Current active default (`mn103.slaspec`) provides:

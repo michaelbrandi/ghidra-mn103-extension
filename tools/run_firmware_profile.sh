@@ -8,6 +8,7 @@ WS_DIR="$(cd "${EXT_DIR}/.." && pwd)"
 GHIDRA_INSTALL_DIR="${GHIDRA_INSTALL_DIR:-${HOME}/Applications/ghidra_12.0.4_PUBLIC}"
 ANALYZE="${GHIDRA_INSTALL_DIR}/support/analyzeHeadless"
 SCRIPT_DIR="${TOOLS_DIR}/ghidra_scripts"
+INSTALL_USER_EXT="${TOOLS_DIR}/install_mn103_user_extension.sh"
 
 SAMPLES_DIR="${1:-${WS_DIR}/tmp_fz_extract}"
 OUT_DIR="${2:-${WS_DIR}/tmp_mn103_headless/firmware_profile}"
@@ -23,6 +24,8 @@ if [[ ! -d "${SAMPLES_DIR}" ]]; then
   echo "error: input directory not found: ${SAMPLES_DIR}" >&2
   exit 1
 fi
+
+"${INSTALL_USER_EXT}" "${GHIDRA_INSTALL_DIR}" "${GHIDRA_USER_HOME:-${HOME}}"
 
 FILES=()
 while IFS= read -r f; do
@@ -75,6 +78,12 @@ awk '
     for (b in sum) printf "%s %d\n", b, sum[b];
   }
 ' "${OUT_DIR}/unknown_top_per_file.txt" | sort -k2,2nr -k1,1 > "${OUT_DIR}/unknown_top_aggregate.txt"
+
+if [[ -s "${OUT_DIR}/failed_files.txt" ]]; then
+  echo "error: one or more files failed headless analysis" >&2
+  cat "${OUT_DIR}/failed_files.txt" >&2
+  exit 1
+fi
 
 REPORT="${OUT_DIR}/firmware_profile_report.txt"
 {

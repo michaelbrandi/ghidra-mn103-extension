@@ -54,8 +54,11 @@ jobs:
       - name: Run golden instruction demo
         shell: bash
         run: |
-          HOME="${RUNNER_TEMP}/home-golden" \
+          set -euo pipefail
+          HOME_ROOT="${RUNNER_TEMP}/home-golden"
+          mkdir -p "${HOME_ROOT}"
+          HOME="${HOME_ROOT}" \
           GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" \
-          GHIDRA_USER_HOME="${RUNNER_TEMP}/ghidra-user-golden" \
+          GHIDRA_USER_HOME="${HOME_ROOT}" \
+          JAVA_TOOL_OPTIONS="-Duser.home=${HOME_ROOT}" \
           ./tools/run_instruction_golden.sh "${RUNNER_TEMP}/tmp_mn103_linux416" "${RUNNER_TEMP}/mn103_ci_golden"
-
