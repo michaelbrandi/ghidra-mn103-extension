@@ -211,6 +211,12 @@ public class AssertAbiModel extends GhidraScript {
             fail("abi_entry missing one or more call sites");
         }
 
+        int ret64Idx = cEntry.indexOf("abi_ret64_fn");
+        int take64Idx = cEntry.indexOf("abi_take64_fn");
+        if (ret64Idx < 0 || take64Idx < 0 || ret64Idx > take64Idx) {
+            fail("abi_entry does not consume the wide return before the wide argument use:\n" + cEntry);
+        }
+
         applyWidePrototype(fRet64, fTake64);
         println("ABI_RET64_WIDE_SIGNATURE=" + fRet64.getPrototypeString(true, true));
         println("ABI_TAKE64_WIDE_SIGNATURE=" + fTake64.getPrototypeString(true, true));
@@ -222,6 +228,7 @@ public class AssertAbiModel extends GhidraScript {
 
         String cRet64Wide = decompileFunction(wideIfc, fRet64);
         String cTake64Wide = decompileFunction(wideIfc, fTake64);
+        String cEntryWide = decompileFunction(wideIfc, fEntry);
 
         String ret64WideSig = signaturePrefix(cRet64Wide);
         if (!ret64WideSig.contains("abi_ret64_fn") ||
@@ -238,10 +245,19 @@ public class AssertAbiModel extends GhidraScript {
                 take64WideSig);
         }
 
+        if (!cEntryWide.contains("abi_ret64_fn") ||
+            !cEntryWide.contains("abi_take64_fn") ||
+            cEntryWide.indexOf("abi_ret64_fn") > cEntryWide.indexOf("abi_take64_fn") ||
+            !cEntryWide.contains("abi_ret64_fn(__return_storage_ptr__)") ||
+            !cEntryWide.contains("abi_take64_fn(CONCAT44(")) {
+            fail("abi_entry did not keep the wide return flowing into a visible wide argument use:\n" +
+                cEntryWide);
+        }
+
         println("ABI_ASSERTION_OK manifest=" + manifestPath);
         println(
             "ABI_ASSERTION_SUMMARY sum_params=2 ret32_len=4 ret64_note=explicit-return-storage " +
-            "take64_note=explicit-wide-arg pointer=abi_ptr_target");
+            "take64_note=explicit-wide-arg ret64_flow=consumed-before-take64-wide-entry pointer=abi_ptr_target");
         println("--- ABI SUM ---");
         println(cSum);
         println("--- ABI RET32 ---");
@@ -254,6 +270,8 @@ public class AssertAbiModel extends GhidraScript {
         println(cRet64Wide);
         println("--- ABI TAKE64 WIDE ---");
         println(cTake64Wide);
+        println("--- ABI ENTRY WIDE ---");
+        println(cEntryWide);
         println("--- ABI RETPTR ---");
         println(cRetPtr);
         println("--- ABI ENTRY ---");

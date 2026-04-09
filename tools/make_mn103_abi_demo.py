@@ -103,7 +103,7 @@ def build_demo_image(
     #   calls abi_sum_fn
     #   compares the sum result
     #   calls the scalar/pointer-return functions
-    #   returns the 64-bit value from abi_ret64_fn as the final entry result
+    #   feeds the 64-bit return from abi_ret64_fn straight into abi_take64_fn
     #   consumes their results so the decompiler has to model the call outputs
     caller_parts = []
     cursor = entry
@@ -119,10 +119,10 @@ def build_demo_image(
     append(_ins_calls_rel16(sum_fn, cursor))
     append(_ins_cmp_imm32_d0(0x00000010))
     append(_ins_calls_rel16(ret32_fn, cursor))
-    append(_ins_calls_rel16(take64_fn, cursor))
     append(_ins_calls_rel16(retptr_fn, cursor))
-    append(_ins_cmp_imm32_a0(ptr_target))
     append(_ins_calls_rel16(ret64_fn, cursor))
+    append(_ins_calls_rel16(take64_fn, cursor))
+    append(_ins_cmp_imm32_a0(ptr_target))
     append(_ins_rets())
 
     _emit(image, entry, b"".join(caller_parts))
