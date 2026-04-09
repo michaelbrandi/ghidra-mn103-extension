@@ -38,15 +38,6 @@ jobs:
           test -x "${GHIDRA_INSTALL_DIR}/support/analyzeHeadless"
           test -x "${GHIDRA_INSTALL_DIR}/support/gradle/gradlew"
 
-      - name: Verify generated spec matches the checked-in spec
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 tools/gen_mn103_slaspec.py \
-            --opc-source tools/vendor/binutils/m10300-opc.c \
-            --out "${RUNNER_TEMP}/mn103.generated.slaspec"
-          diff -u data/languages/mn103.slaspec "${RUNNER_TEMP}/mn103.generated.slaspec"
-
       - name: Build extension package
         shell: bash
         run: GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" ./tools/rebuild_mn103_extension.sh

@@ -28,12 +28,17 @@
   <!--
     MN10300 / GCC-oriented default call model.
     GNU GCC uses D0 and D1 for the first two argument words.
+    A3 is a real address register and Linux uses it as the kernel frame pointer.
+    64-bit scalar returns are modeled in D1:D0.
     Pointer returns are mirrored in A0 and D0 when enabled by compiler mode.
-    Volatile registers are A0, A1, D0, and D1; A2, D2, D3, and SP are preserved.
+    Call-clobbered registers are A0, A1, D0, and D1; A2, A3, D2, D3, and SP are preserved.
   -->
   <default_proto>
     <prototype name="__mncall" extrapop="unknown" stackshift="0">
       <input>
+        <pentry minsize="8" maxsize="8">
+          <addr space="join" piece1="D1" piece2="D0" />
+        </pentry>
         <pentry minsize="1" maxsize="4">
           <register name="D0" />
         </pentry>
@@ -44,9 +49,12 @@
           <addr offset="0" space="stack" />
         </pentry>
       </input>
-      <output>
+      <output killedbycall="true">
         <pentry minsize="1" maxsize="4" metatype="ptr">
           <register name="A0" />
+        </pentry>
+        <pentry minsize="8" maxsize="8">
+          <addr space="join" piece1="D1" piece2="D0" />
         </pentry>
         <pentry minsize="1" maxsize="4">
           <register name="D0" />
@@ -56,8 +64,15 @@
         <register name="D2" />
         <register name="D3" />
         <register name="A2" />
+        <register name="A3" />
         <register name="SP" />
       </unaffected>
+      <killedbycall>
+        <register name="A0" />
+        <register name="A1" />
+        <register name="D0" />
+        <register name="D1" />
+      </killedbycall>
     </prototype>
   </default_proto>
 </compiler_spec>

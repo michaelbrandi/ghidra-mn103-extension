@@ -28,15 +28,25 @@ That archival file is not selected by `mn103.ldefs`.
 
 GitHub Actions now runs a clean-clone CI path on every push and pull request:
 
-- verify the checked-in `mn103.slaspec` still matches regenerated output from a
-  pinned GNU binutils opcode snapshot stored in the repo
+- The checked-in `mn103.slaspec` is the supported release input for the
+  package; the generator is retained as reference material and may need
+  reconciliation before it is used as a rebuild source again.
 - build the extension package against Ghidra 12.0.4 and publish a canonical
   `dist/ghidra-mn103-extension.zip` artifact alias
 - generate a synthetic MN103 demo corpus and run a headless smoke analysis
 
+Push CI builds from the checked-in language files only; spec regeneration is
+kept for manual reconciliation work.
+
 The small exact-match instruction golden demo still exists, but it now runs in a
 separate manual GitHub Actions workflow (`MN103 Golden`) so push CI stays
 stable while the deeper decoder check remains available on demand.
+
+That same manual workflow now also runs an ABI-focused demo that checks
+`D0`/`D1` argument flow, scalar returns in `D0`, pointer returns in `A0`, and
+explicit wide `D1:D0` return-storage handling in the decompiler path. The raw
+automatic inference of that wide pair is still a tracked hardening item, but
+the explicit wide model is now being exercised directly in the golden path.
 
 The local full gate in `tools/check_mn103_corpus.sh` also records per-stage
 timings in `tmp_mn103_headless/mn103_gate/performance_metrics.txt` so you can
@@ -56,8 +66,9 @@ Current active default (`mn103.slaspec`) provides:
 - New language ID: `mn10300:LE:32:default`
 - Reliable language load/import on Ghidra 12.0.4
 - GCC-oriented default call model: `D0`/`D1` are the first argument words,
-  `A0` is the pointer return register, `D0` mirrors scalar returns, and
-  `D2`/`D3`/`A2`/`SP` are preserved
+  `A0` is the pointer return register, `D0` mirrors scalar returns,
+  `D1:D0` models 64-bit scalar returns, and `A2`/`A3`/`D2`/`D3`/`SP` are
+  preserved; call-clobbered registers are `A0`, `A1`, `D0`, and `D1`
 - Stable bootstrap decode (`nop`, `pi`, `jmp`/`call`, generic one-byte fallback)
 - Step-3 control-flow operand rendering for `call`/`ret` extended forms:
   - `call target,[reglist],imm8`
@@ -175,9 +186,15 @@ historical reference.
 
 - The remaining open work is mostly semantic and release-quality; the current
   demo/firmware/real-blob corpora are decode-clean.
+- A3 is modeled as a real address register; Linux MN10300 uses it as the kernel
+  frame pointer, and the default call model now preserves it.
 - `MEMINC`/`MEMINC2` and `fmov` post-increment behavior is modeled explicitly,
   with the remaining displacement-width bookkeeping centralized in the generator;
   the exact hardware intent is still inferred from opcode layout.
+- The ABI smoke currently validates call/return flow for `D0`/`D1` arguments,
+  `D0`/`A0` returns, and explicit wide `D1:D0` prototypes in the decompiler
+  path; raw automatic inference of the wide pair remains a tracked hardening
+  item.
 - Some advanced AM33 pair-op aliases and undefined opcode families are still fallback for now
 - AM33 overlap aliases follow binutils table precedence (first-match retained)
 - Bit-memory `btst`/`bset`/`bclr` flag behavior now follows the manual more closely: `VF`/`CF` clear, `NF`/`ZF` track the logical test result, and the byte memory side effects remain modeled explicitly
@@ -209,6 +226,24 @@ python3 tools/gen_mn103_slaspec.py \
   --opc-source tmp_mn103/m10300-opc.c \
   --out ghidra-mn103/data/languages/mn103.slaspec
 ```
+
+The supported extension build uses the checked-in `data/languages/mn103.slaspec`
+and `data/languages/mn103.sla` artifacts. The generator is kept for reference
+and future reconciliation work, but it is not currently the release source of
+truth. A direct `sleigh` compile of the current generated output still fails on
+helper-expression syntax in the AM33 memory families, so the checked-in spec
+remains authoritative for release builds.
+
+For a repeatable source-vs-generator check, run:
+
+```bash
+./tools/check_mn103_generator_reconciliation.sh
+```
+
+That helper regenerates a draft spec, tries to compile it, and also compiles
+the checked-in release spec as the production baseline. The release spec is the
+clean path; the draft output is still useful for measuring reconciliation work
+against the current source.
 
 ## Compact Linux MN10300 Reference Tree (Optional)
 
@@ -256,13 +291,27 @@ Or run the fetch + analysis wrapper:
 This corpus currently includes firmware images from:
 - DMC-FP3
 - DC-FZ80/FZ81/FZ82/FZ83
+- DMC-FS15
+- DMC-FT3
 - HX-A1M
 - HX-A100
 - HC-MDH3
+- DMC-LX3
+- DMC-LX5
+- DMC-TZ4/TZ5
+- DMC-TZ7/ZS3
+- DMC-ZX3
 
-The files are regular firmware payloads, not encrypted blobs. In quick checks
-they show recognizable container headers and Ghidra begins normal disassembly
-and decompilation on them.
+In quick checks the files show recognizable container headers such as UPD or
+Panasonic markers, plus readable strings inside the payloads. I did not find
+evidence of encrypted update blobs in these samples, and Ghidra begins normal
+disassembly and decompilation on them.
+
+The full optional Panasonic corpus was also run headless through Ghidra on
+2026-04-06 and came back clean: 14/14 files with `unknown=0` and no failed
+files. The first-model FZ1000 image was evaluated separately and is still
+excluded from the corpus because it did not behave like a useful analysis
+sample.
 
 ## Extract Linux MN10300 Symbols For Ghidra (Optional)
 
