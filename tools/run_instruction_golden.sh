@@ -9,6 +9,7 @@ GHIDRA_INSTALL_DIR="${GHIDRA_INSTALL_DIR:-${HOME}/Applications/ghidra_12.0.4_PUB
 export GHIDRA_INSTALL_DIR
 ANALYZE="${GHIDRA_INSTALL_DIR}/support/analyzeHeadless"
 SCRIPT_DIR="${TOOLS_DIR}/ghidra_scripts"
+INSTALL_USER_EXT="${TOOLS_DIR}/install_mn103_user_extension.sh"
 
 SYMBOLS_ROOT="${1:-${WS_DIR}/tmp_mn103_linux416}"
 OUT_DIR="${2:-${WS_DIR}/tmp_mn103_headless/instruction_golden}"
@@ -21,6 +22,8 @@ if [[ ! -x "${ANALYZE}" ]]; then
   echo "error: analyzeHeadless not found at ${ANALYZE}" >&2
   exit 1
 fi
+
+"${INSTALL_USER_EXT}" "${GHIDRA_INSTALL_DIR}" "${GHIDRA_USER_HOME:-${HOME}}"
 
 mkdir -p "${OUT_DIR}/logs" "${PROJECTS_DIR}"
 

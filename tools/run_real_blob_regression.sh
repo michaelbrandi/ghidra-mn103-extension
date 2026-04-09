@@ -8,6 +8,7 @@ WS_DIR="$(cd "${EXT_DIR}/.." && pwd)"
 GHIDRA_INSTALL_DIR="${GHIDRA_INSTALL_DIR:-${HOME}/Applications/ghidra_12.0.4_PUBLIC}"
 ANALYZE="${GHIDRA_INSTALL_DIR}/support/analyzeHeadless"
 SCRIPT_DIR="${TOOLS_DIR}/ghidra_scripts"
+INSTALL_USER_EXT="${TOOLS_DIR}/install_mn103_user_extension.sh"
 
 SAMPLES_DIR="${1:-${WS_DIR}/tmp_mn103_online_samples}"
 OUT_DIR="${2:-${WS_DIR}/tmp_mn103_headless/real_blob_regression}"
@@ -23,6 +24,8 @@ if [[ ! -x "${ANALYZE}" ]]; then
   echo "error: analyzeHeadless not found at ${ANALYZE}" >&2
   exit 1
 fi
+
+"${INSTALL_USER_EXT}" "${GHIDRA_INSTALL_DIR}" "${GHIDRA_USER_HOME:-${HOME}}"
 
 for f in "${FILES[@]}"; do
   if [[ ! -f "${f}" ]]; then
