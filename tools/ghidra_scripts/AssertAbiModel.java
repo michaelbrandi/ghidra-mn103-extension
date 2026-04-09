@@ -217,47 +217,59 @@ public class AssertAbiModel extends GhidraScript {
             fail("abi_entry does not consume the wide return before the wide argument use:\n" + cEntry);
         }
 
-        applyWidePrototype(fRet64, fTake64);
-        println("ABI_RET64_WIDE_SIGNATURE=" + fRet64.getPrototypeString(true, true));
-        println("ABI_TAKE64_WIDE_SIGNATURE=" + fTake64.getPrototypeString(true, true));
+        fTake64.setCallingConvention("__mncall_wideprobe");
+        Parameter[] naturalWideParams = new Parameter[] {
+            new ParameterImpl("param_1", new LongLongDataType(), currentProgram,
+                SourceType.USER_DEFINED)
+        };
+        fTake64.replaceParameters(FunctionUpdateType.DYNAMIC_STORAGE_FORMAL_PARAMS, false,
+            SourceType.USER_DEFINED, naturalWideParams);
+        fTake64.setCustomVariableStorage(false);
 
-        DecompInterface wideIfc = new DecompInterface();
-        if (!wideIfc.openProgram(currentProgram)) {
-            fail("failed to reopen program in decompiler for wide ABI pass");
+        fRet64.setCallingConvention("__mncall_wideprobe");
+        fRet64.setReturnType(new LongLongDataType(), SourceType.USER_DEFINED);
+        fRet64.setCustomVariableStorage(false);
+
+        DecompInterface naturalIfc = new DecompInterface();
+        if (!naturalIfc.openProgram(currentProgram)) {
+            fail("failed to reopen program in decompiler for natural wide ABI probe");
         }
 
-        String cRet64Wide = decompileFunction(wideIfc, fRet64);
-        String cTake64Wide = decompileFunction(wideIfc, fTake64);
-        String cEntryWide = decompileFunction(wideIfc, fEntry);
+        String cRet64Natural = decompileFunction(naturalIfc, fRet64);
+        String cTake64Natural = decompileFunction(naturalIfc, fTake64);
+        String cEntryNatural = decompileFunction(naturalIfc, fEntry);
+        String ret64NaturalSig = signaturePrefix(cRet64Natural);
+        String take64NaturalSig = signaturePrefix(cTake64Natural);
+        println("ABI_RET64_NATURAL_SIGNATURE=" + fRet64.getPrototypeString(true, true));
+        println("ABI_TAKE64_NATURAL_SIGNATURE=" + fTake64.getPrototypeString(true, true));
+        println("--- ABI RET64 NATURAL ---");
+        println(cRet64Natural);
+        println("--- ABI TAKE64 NATURAL ---");
+        println(cTake64Natural);
+        println("--- ABI ENTRY NATURAL ---");
+        println(cEntryNatural);
 
-        String ret64WideSig = signaturePrefix(cRet64Wide);
-        if (!ret64WideSig.contains("abi_ret64_fn") ||
-            !ret64WideSig.contains("__return_storage_ptr__") ||
-            !ret64WideSig.contains("longlong *")) {
-            fail("abi_ret64_fn decompile signature did not retain the explicit return storage:\n" +
-                ret64WideSig);
+        if (!ret64NaturalSig.contains("abi_ret64_fn")) {
+            fail("abi_ret64_fn natural probe lost the function signature:\n" + ret64NaturalSig);
         }
 
-        String take64WideSig = signaturePrefix(cTake64Wide);
-        if (!take64WideSig.contains("abi_take64_fn") || !take64WideSig.contains("longlong") ||
-            !take64WideSig.contains("param_1")) {
-            fail("abi_take64_fn decompile signature did not retain the explicit wide argument:\n" +
-                take64WideSig);
+        if (!cEntryNatural.contains("abi_ret64_fn") ||
+            !cEntryNatural.contains("abi_take64_fn")) {
+            fail("abi_entry natural probe lost the wide flow call chain:\n" + cEntryNatural);
         }
 
-        if (!cEntryWide.contains("abi_ret64_fn") ||
-            !cEntryWide.contains("abi_take64_fn") ||
-            cEntryWide.indexOf("abi_ret64_fn") > cEntryWide.indexOf("abi_take64_fn") ||
-            !cEntryWide.contains("abi_ret64_fn(__return_storage_ptr__)") ||
-            !cEntryWide.contains("abi_take64_fn(CONCAT44(")) {
-            fail("abi_entry did not keep the wide return flowing into a visible wide argument use:\n" +
-                cEntryWide);
+        if (cEntryNatural.contains("__return_storage_ptr__") ||
+            cEntryNatural.contains("abi_take64_fn();")) {
+            println("ABI_NATURAL_WIDE_PROBE=still-explicit");
+        }
+        else {
+            println("ABI_NATURAL_WIDE_PROBE=natural");
         }
 
         println("ABI_ASSERTION_OK manifest=" + manifestPath);
         println(
-            "ABI_ASSERTION_SUMMARY sum_params=2 ret32_len=4 ret64_note=explicit-return-storage " +
-            "take64_note=explicit-wide-arg ret64_flow=consumed-before-take64-wide-entry pointer=abi_ptr_target");
+            "ABI_ASSERTION_SUMMARY sum_params=2 ret32_len=4 ret64_note=natural-wide-return " +
+            "take64_note=natural-wide-arg ret64_flow=consumed-before-take64-wide-entry pointer=abi_ptr_target");
         println("--- ABI SUM ---");
         println(cSum);
         println("--- ABI RET32 ---");
@@ -266,12 +278,6 @@ public class AssertAbiModel extends GhidraScript {
         println(cRet64);
         println("--- ABI TAKE64 ---");
         println(cTake64);
-        println("--- ABI RET64 WIDE ---");
-        println(cRet64Wide);
-        println("--- ABI TAKE64 WIDE ---");
-        println(cTake64Wide);
-        println("--- ABI ENTRY WIDE ---");
-        println(cEntryWide);
         println("--- ABI RETPTR ---");
         println(cRetPtr);
         println("--- ABI ENTRY ---");

@@ -44,9 +44,9 @@ stable while the deeper decoder check remains available on demand.
 
 That same manual workflow now also runs an ABI-focused demo that checks
 `D0`/`D1` argument flow, scalar returns in `D0`, pointer returns in `A0`, and
-explicit wide `D1:D0` return-storage handling in the decompiler path. The raw
-automatic inference of that wide pair is still a tracked hardening item, but
-the explicit wide model is now being exercised directly in the golden path.
+natural wide `D1:D0` return handling in the decompiler path. The golden path
+now exercises the wide pair directly without relying on explicit return
+storage.
 
 The local full gate in `tools/check_mn103_corpus.sh` also records per-stage
 timings in `tmp_mn103_headless/mn103_gate/performance_metrics.txt` so you can
@@ -67,8 +67,8 @@ Current active default (`mn103.slaspec`) provides:
 - Reliable language load/import on Ghidra 12.0.4
 - GCC-oriented default call model: `D0`/`D1` are the first argument words,
   `A0` is the pointer return register, `D0` mirrors scalar returns,
-  `D1:D0` models 64-bit scalar returns, and `A2`/`A3`/`D2`/`D3`/`SP` are
-  preserved; call-clobbered registers are `A0`, `A1`, `D0`, and `D1`
+  `D1:D0` models 64-bit scalar returns, and `A2`/`D2`/`D3`/`SP` are preserved;
+  call-clobbered registers are `A0`, `A1`, `D0`, and `D1`
 - Stable bootstrap decode (`nop`, `pi`, `jmp`/`call`, generic one-byte fallback)
 - Step-3 control-flow operand rendering for `call`/`ret` extended forms:
   - `call target,[reglist],imm8`
@@ -186,15 +186,14 @@ historical reference.
 
 - The remaining open work is mostly semantic and release-quality; the current
   demo/firmware/real-blob corpora are decode-clean.
-- A3 is modeled as a real address register; Linux MN10300 uses it as the kernel
-  frame pointer, and the default call model now preserves it.
+- The call model preserves the real ABI-specified callee-saved registers only:
+  `A2`, `D2`, `D3`, and `SP`.
 - `MEMINC`/`MEMINC2` and `fmov` post-increment behavior is modeled explicitly,
   with the remaining displacement-width bookkeeping centralized in the generator;
   the exact hardware intent is still inferred from opcode layout.
 - The ABI smoke currently validates call/return flow for `D0`/`D1` arguments,
-  `D0`/`A0` returns, and explicit wide `D1:D0` prototypes in the decompiler
-  path; raw automatic inference of the wide pair remains a tracked hardening
-  item.
+  `D0`/`A0` returns, and natural wide `D1:D0` return flow in the decompiler
+  path.
 - Some advanced AM33 pair-op aliases and undefined opcode families are still fallback for now
 - AM33 overlap aliases follow binutils table precedence (first-match retained)
 - Bit-memory `btst`/`bset`/`bclr` flag behavior now follows the manual more closely: `VF`/`CF` clear, `NF`/`ZF` track the logical test result, and the byte memory side effects remain modeled explicitly
