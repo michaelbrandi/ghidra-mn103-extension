@@ -7,7 +7,10 @@ EXT_DIR="$(cd "${TOOLS_DIR}/.." && pwd)"
 GHIDRA_INSTALL_DIR="${1:-${GHIDRA_INSTALL_DIR:-${HOME}/Applications/ghidra_12.0.4_PUBLIC}}"
 USER_HOME_ROOT="${2:-${GHIDRA_USER_HOME:-${HOME}}}"
 
-SOURCE_EXTENSION="${GHIDRA_INSTALL_DIR}/Extensions/ghidra-mn103"
+SOURCE_CANDIDATES=(
+  "${GHIDRA_INSTALL_DIR}/Ghidra/Extensions/ghidra-mn103"
+  "${GHIDRA_INSTALL_DIR}/Extensions/ghidra-mn103"
+)
 PACKAGE_ZIP="${EXT_DIR}/dist/ghidra-mn103-extension.zip"
 TMP_EXTRACT=""
 
@@ -18,9 +21,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [[ -d "${SOURCE_EXTENSION}" ]]; then
-  COPY_SOURCE="${SOURCE_EXTENSION}"
-elif [[ -f "${PACKAGE_ZIP}" ]]; then
+COPY_SOURCE=""
+for candidate in "${SOURCE_CANDIDATES[@]}"; do
+  if [[ -d "${candidate}" ]]; then
+    COPY_SOURCE="${candidate}"
+    break
+  fi
+done
+
+if [[ -z "${COPY_SOURCE}" && -f "${PACKAGE_ZIP}" ]]; then
   TMP_EXTRACT="$(mktemp -d)"
   unzip -q "${PACKAGE_ZIP}" -d "${TMP_EXTRACT}"
   INSTALLED_SPEC="$(find "${TMP_EXTRACT}" -type f -path '*/data/languages/mn103.slaspec' | head -n 1)"
@@ -29,8 +38,11 @@ elif [[ -f "${PACKAGE_ZIP}" ]]; then
     exit 1
   fi
   COPY_SOURCE="$(cd "$(dirname "${INSTALLED_SPEC}")/../.." && pwd)"
-else
-  echo "error: installed extension directory not found at ${SOURCE_EXTENSION}" >&2
+fi
+
+if [[ -z "${COPY_SOURCE}" ]]; then
+  echo "error: installed extension directory not found in:" >&2
+  printf '  %s\n' "${SOURCE_CANDIDATES[@]}" >&2
   echo "error: fallback extension package not found at ${PACKAGE_ZIP}" >&2
   exit 1
 fi

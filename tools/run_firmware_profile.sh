@@ -58,6 +58,9 @@ for f in "${FILES[@]}"; do
       -scriptPath "${SCRIPT_DIR}" \
       > "${log}" 2>&1; then
     echo "${f}" >> "${OUT_DIR}/failed_files.txt"
+    echo "error: headless analysis failed for ${f}" >&2
+    echo "error: tail of ${log}:" >&2
+    tail -n 80 "${log}" >&2 || true
     continue
   fi
 

@@ -40,16 +40,7 @@ jobs:
 
       - name: Install the built extension into Ghidra
         shell: bash
-        run: |
-          set -euo pipefail
-          GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC"
-          ZIP_PATH="./dist/ghidra-mn103-extension.zip"
-          test -f "${ZIP_PATH}"
-          rm -rf "${GHIDRA_INSTALL_DIR}/Extensions/ghidra-mn103"
-          mkdir -p "${GHIDRA_INSTALL_DIR}/Extensions"
-          unzip -q "${ZIP_PATH}" -d "${GHIDRA_INSTALL_DIR}/Extensions"
-          INSTALLED_SPEC="$(find "${GHIDRA_INSTALL_DIR}/Extensions" -type f -path '*/data/languages/mn103.slaspec' | head -n 1)"
-          test -n "${INSTALLED_SPEC}"
+        run: ./tools/install_mn103_app_extension.sh "${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" ./dist/ghidra-mn103-extension.zip
 
       - name: Run golden instruction demo
         shell: bash
@@ -95,16 +86,7 @@ jobs:
 
       - name: Install the built extension into Ghidra
         shell: bash
-        run: |
-          set -euo pipefail
-          GHIDRA_INSTALL_DIR="${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC"
-          ZIP_PATH="./dist/ghidra-mn103-extension.zip"
-          test -f "${ZIP_PATH}"
-          rm -rf "${GHIDRA_INSTALL_DIR}/Extensions/ghidra-mn103"
-          mkdir -p "${GHIDRA_INSTALL_DIR}/Extensions"
-          unzip -q "${ZIP_PATH}" -d "${GHIDRA_INSTALL_DIR}/Extensions"
-          INSTALLED_SPEC="$(find "${GHIDRA_INSTALL_DIR}/Extensions" -type f -path '*/data/languages/mn103.slaspec' | head -n 1)"
-          test -n "${INSTALLED_SPEC}"
+        run: ./tools/install_mn103_app_extension.sh "${RUNNER_TEMP}/ghidra_12.0.4_PUBLIC" ./dist/ghidra-mn103-extension.zip
 
       - name: Run ABI golden demo
         shell: bash
