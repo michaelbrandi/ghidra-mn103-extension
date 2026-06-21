@@ -56,6 +56,10 @@ The heavier corpus gates remain available locally through the scripts in
 `tools/`, which is still the best place to run the full validation set before a
 release.
 
+Tagged releases use the `MN103 Release` GitHub Actions workflow. Tags matching
+`v*` build the extension, run the smoke plus golden checks, upload the canonical
+zip and checksum artifacts, and create a draft GitHub prerelease.
+
 The headless helper scripts also mirror the installed extension into the active
 Ghidra user settings directory, so clean-headless runs do not depend on a
 prewarmed profile cache.
@@ -198,7 +202,7 @@ historical reference.
 - AM33 overlap aliases follow binutils table precedence (first-match retained)
 - Bit-memory `btst`/`bset`/`bclr` flag behavior now follows the manual more closely: `VF`/`CF` clear, `NF`/`ZF` track the logical test result, and the byte memory side effects remain modeled explicitly
 
-This is deliberate for version `0.6`: branch/call/return behavior was modeled first,
+This is deliberate for version `0.7`: branch/call/return behavior was modeled first,
 then core arithmetic/data-move register forms, then selected `mov` memory forms,
 then selected indexed/IMM32/AM33-R memory forms, then selected unary/extension
 families, then selected shift families, then selected bit-test/set/clear and S0
