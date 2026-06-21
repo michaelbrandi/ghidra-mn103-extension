@@ -42,6 +42,9 @@ git tag -a v0.7.0-rc1 -m "MN103 Ghidra extension v0.7.0-rc1"
 git push origin main v0.7.0-rc1
 ```
 
+If a published release-candidate tag fails in CI, leave it in place and cut the
+next candidate tag after the fix. Do not rewrite a pushed release tag.
+
 Pushing a `v*` tag starts the `MN103 Release` workflow. That workflow builds
 the extension, runs smoke analysis plus both golden checks, uploads the release
 artifacts, and creates a draft GitHub prerelease.

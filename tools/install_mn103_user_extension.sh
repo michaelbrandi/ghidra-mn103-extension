@@ -8,9 +8,30 @@ GHIDRA_INSTALL_DIR="${1:-${GHIDRA_INSTALL_DIR:-${HOME}/Applications/ghidra_12.0.
 USER_HOME_ROOT="${2:-${GHIDRA_USER_HOME:-${HOME}}}"
 
 SOURCE_EXTENSION="${GHIDRA_INSTALL_DIR}/Extensions/ghidra-mn103"
+PACKAGE_ZIP="${EXT_DIR}/dist/ghidra-mn103-extension.zip"
+TMP_EXTRACT=""
 
-if [[ ! -d "${SOURCE_EXTENSION}" ]]; then
+cleanup() {
+  if [[ -n "${TMP_EXTRACT}" ]]; then
+    rm -rf "${TMP_EXTRACT}"
+  fi
+}
+trap cleanup EXIT
+
+if [[ -d "${SOURCE_EXTENSION}" ]]; then
+  COPY_SOURCE="${SOURCE_EXTENSION}"
+elif [[ -f "${PACKAGE_ZIP}" ]]; then
+  TMP_EXTRACT="$(mktemp -d)"
+  unzip -q "${PACKAGE_ZIP}" -d "${TMP_EXTRACT}"
+  INSTALLED_SPEC="$(find "${TMP_EXTRACT}" -type f -path '*/data/languages/mn103.slaspec' | head -n 1)"
+  if [[ -z "${INSTALLED_SPEC}" ]]; then
+    echo "error: extension package does not contain data/languages/mn103.slaspec: ${PACKAGE_ZIP}" >&2
+    exit 1
+  fi
+  COPY_SOURCE="$(cd "$(dirname "${INSTALLED_SPEC}")/../.." && pwd)"
+else
   echo "error: installed extension directory not found at ${SOURCE_EXTENSION}" >&2
+  echo "error: fallback extension package not found at ${PACKAGE_ZIP}" >&2
   exit 1
 fi
 
@@ -33,6 +54,6 @@ TARGET_EXTENSION="${SETTINGS_ROOT}/Extensions/ghidra-mn103"
 
 mkdir -p "${SETTINGS_ROOT}/Extensions"
 rm -rf "${TARGET_EXTENSION}"
-cp -R "${SOURCE_EXTENSION}" "${TARGET_EXTENSION}"
+cp -R "${COPY_SOURCE}" "${TARGET_EXTENSION}"
 
 echo "Installed extension into: ${TARGET_EXTENSION}"
