@@ -2078,6 +2078,23 @@ macro swaph_word32(dst, src) {
     local a:4 = AREG_D0_LO + sext(SIMM16_B23);
     AREG_D0_HI = *[ram]:4 a;
 }
+# mov dm,(sd16,an) / am,(sd16,an) base+disp16 stores (binutils 0xfa10 / 0xfa30).
+:mov DREG_D0_HI, "("^SIMM16_B23^","^AREG_D0_LO^")" is b0_any=0xFA; b1_7=0 & b1_6=0 & b1_5=0 & b1_4=1 & DREG_D0_HI & AREG_D0_LO; SIMM16_B23 {
+    local a:4 = AREG_D0_LO + sext(SIMM16_B23);
+    *[ram]:4 a = DREG_D0_HI;
+}
+:mov AREG_D0_HI, "("^SIMM16_B23^","^AREG_D0_LO^")" is b0_any=0xFA; b1_7=0 & b1_6=0 & b1_5=1 & b1_4=1 & AREG_D0_HI & AREG_D0_LO; SIMM16_B23 {
+    local a:4 = AREG_D0_LO + sext(SIMM16_B23);
+    *[ram]:4 a = AREG_D0_HI;
+}
+# mov (imm16),an absolute load (binutils 0xfaa0 mask 0xfffc).
+:mov "("^IMM16_B23^")", AREG_D0_LO is b0_any=0xFA; b1_7=1 & b1_6=0 & b1_5=1 & b1_4=0 & b1_3=0 & b1_2=0 & AREG_D0_LO; IMM16_B23 {
+    local a:4 = zext(IMM16_B23);
+    AREG_D0_LO = *[ram]:4 a;
+}
+# mov am,sp / dm,mdr register transfers (binutils 0xf2f0 / 0xf2f2, mask 0xfff3).
+:mov AREG_D0_HI, "SP" is b0_any=0xF2; b1_7=1 & b1_6=1 & b1_5=1 & b1_4=1 & AREG_D0_HI & b1_1=0 & b1_0=0 { SP = AREG_D0_HI; }
+:mov DREG_D0_HI, "MDR" is b0_any=0xF2; b1_7=1 & b1_6=1 & b1_5=1 & b1_4=1 & DREG_D0_HI & b1_1=1 & b1_0=0 { MDR = DREG_D0_HI:2; }
 
 # non-AM33 mov D1 SD8 forms
 :mov "("^SIMM8_B2^","^AREG_D0_LO^")", DREG_D0_HI is b0_any=0xF8; b1_7=0 & b1_6=0 & b1_5=0 & b1_4=0 & AREG_D0_LO & DREG_D0_HI; SIMM8_B2 {

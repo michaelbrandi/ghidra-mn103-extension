@@ -25,15 +25,15 @@ What "validated" actually means here, in decreasing order of strength:
   `mn10300-elf-objdump` is the ground truth. `tools/run_objdump_diff.sh`
   disassembles a corpus with both objdump and Ghidra over the identical byte
   stream and reports measured agreement. On the NVIDIA public firmware corpus
-  (65,189 compared instructions): **97.1% mnemonic agreement, 96.3%
-  mnemonic+operand agreement, 98.1% instruction-boundary agreement.** Of the
-  ~3% mnemonic disagreement, almost all are reserved/undefined encodings that
-  both disassemblers handle specially (and which Ghidra now surfaces as
-  `unimpl` rather than silently). The differential pass found and closed real
-  coverage gaps (`btst imm8,(d8,an)` and `mov (d16,an),reg`); the only real
-  gaps still open are six occurrences of five additional `mov` forms
-  (SP-relative and base-relative disp16 stores, absolute `imm16` load,
-  register-to-`MDR`, and `a2`->`sp`), which currently decode as `unimpl`.
+  (~65,000 compared instructions): **97.1% mnemonic agreement, 96.3%
+  mnemonic+operand agreement, 98.1% instruction-boundary agreement.** The
+  remaining mnemonic disagreement is entirely reserved/undefined encodings
+  that both disassemblers handle specially (and which Ghidra surfaces as
+  `unimpl` rather than silently) — **the differential pass found and closed
+  every real valid-instruction coverage gap it detected** (`btst imm8,(d8,an)`,
+  base/SP-relative disp16 `mov` loads and stores, absolute `imm16` `mov`,
+  register-to-`MDR`, and `a2`->`sp`). Re-running `tools/run_objdump_diff.sh`
+  reports zero non-`udf`/`unknown` mnemonic mismatches on the corpus.
 - exact-match instruction golden (specific byte sequences must produce
   specific listing lines), an ABI golden asserting decompiler call/return
   behavior, p-code emulation checks for the shift/flag semantics, and a
