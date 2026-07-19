@@ -32,7 +32,13 @@ done
 if [[ -z "${COPY_SOURCE}" && -f "${PACKAGE_ZIP}" ]]; then
   TMP_EXTRACT="$(mktemp -d)"
   unzip -q "${PACKAGE_ZIP}" -d "${TMP_EXTRACT}"
-  INSTALLED_SPEC="$(find "${TMP_EXTRACT}" -type f -path '*/data/languages/mn103.slaspec' | head -n 1)"
+  # Prefer the canonical module spec (…/ghidra-mn103/data/languages/…). Exclude
+  # any nested copies that stray build inputs (e.g. a .claude worktree) can drop
+  # into the package, and pick the shallowest remaining match so the real
+  # top-level spec always wins over cruft.
+  INSTALLED_SPEC="$(find "${TMP_EXTRACT}" -type f -path '*/data/languages/mn103.slaspec' \
+    -not -path '*/.claude/*' -not -path '*/worktrees/*' \
+    | awk '{ print gsub(/\//,"/"), $0 }' | sort -n | head -n 1 | cut -d' ' -f2-)"
   if [[ -z "${INSTALLED_SPEC}" ]]; then
     echo "error: extension package does not contain data/languages/mn103.slaspec: ${PACKAGE_ZIP}" >&2
     exit 1
