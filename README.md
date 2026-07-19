@@ -74,6 +74,10 @@ Current active default (`mn103.slaspec`) provides:
   `D1:D0` models 64-bit scalar returns, and `A2`/`D2`/`D3`/`SP` are preserved;
   call-clobbered registers are `A0`, `A1`, `D0`, and `D1`
 - Stable bootstrap decode (`nop`, `pi`, `jmp`/`call`, generic one-byte fallback)
+- Honest unknown-instruction semantics: the one-byte `op` fallback, the
+  reserved `udf`/`udfu` families, and the not-yet-modeled AM33_2 `fmov`
+  IMM32_HIGH8 forms are marked `unimpl`, so the decompiler reports
+  "unimplemented instruction" instead of silently treating them as no-ops
 - Step-3 control-flow operand rendering for `call`/`ret` extended forms:
   - `call target,[reglist],imm8`
   - `ret [reglist],imm8` / `retf [reglist],imm8`
@@ -103,6 +107,29 @@ Current active default (`mn103.slaspec`) provides:
   - AM33 Linux-used D10 pair-op forms:
     `add_add`, `sub_sub`, `mov_asl`, `or_asl`, `or_lsr`, `or_asr`, `xor_cmp`
   - `bset` / `bclr` for base `(an)` plus selected shifted-displacement and absolute forms
+
+## Function start patterns
+
+The extension now ships `data/patterns/mn103_patterns.xml`, which feeds
+Ghidra's Function Start Search analyzer so functions in raw firmware images
+are discovered even when nothing references them:
+
+- `movm [reglist],(sp)` prologues (requires at least one of the `d2`/`d3`/
+  `a2`/`a3` callee-saved bits, so a stray reglist-free `movm` byte in data
+  does not fire)
+- `add -imm8/-imm16/-imm32,sp` frame-allocation prologues
+- the standalone `movm` + `add -imm,sp` two-instruction prologue, which is
+  distinctive enough to match without preceding context (e.g. after literal
+  pools)
+- pre-context anchors on `ret`/`retf`/`rets`, `nop` padding, and
+  unconditional `bra`/`jmp` forms
+
+Validated against a synthetic multi-prologue probe (all planted functions
+found, including an `add -imm,sp`-only frame function after `nop` padding and
+a prologue directly after a 32-byte data gap) and against the public NVIDIA
+corpus (no false positives; that ucode saves registers at the call site via
+`call [reglist],imm8`, so its bare callee entries are out of scope for
+prologue-based discovery and are found via call flow instead).
 
 The detailed phase coverage listed below is the build-up that led to the
 current active spec. The archived experimental snapshot is retained only as a
@@ -198,7 +225,13 @@ historical reference.
 - The ABI smoke currently validates call/return flow for `D0`/`D1` arguments,
   `D0`/`A0` returns, and natural wide `D1:D0` return flow in the decompiler
   path.
-- Some advanced AM33 pair-op aliases and undefined opcode families are still fallback for now
+- Some advanced AM33 pair-op aliases and undefined opcode families are still fallback for now;
+  fallback and reserved encodings decode but carry `unimpl` p-code, so the
+  decompiler flags them loudly rather than skipping them
+- The AM33_2 `fmov` IMM32_HIGH8 double-precision memory forms decode with
+  correct length but `unimpl` p-code; full modeling needs 8-byte `FD`
+  registers aliasing `FS` pairs, which the current register file does not
+  express yet
 - AM33 overlap aliases follow binutils table precedence (first-match retained)
 - Bit-memory `btst`/`bset`/`bclr` flag behavior now follows the manual more closely: `VF`/`CF` clear, `NF`/`ZF` track the logical test result, and the byte memory side effects remain modeled explicitly
 

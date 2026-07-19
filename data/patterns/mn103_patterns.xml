@@ -1,0 +1,76 @@
+<patternlist>
+  <!--
+    MN10300 function start patterns for the Ghidra FunctionStartAnalyzer.
+
+    GCC-style prologues on MN10300 open with one or both of:
+      movm [reglist],(sp)        0xCF <reglist>   (reglist bit7=D2 bit6=D3
+                                                   bit5=A2 bit4=A3 bit3=other
+                                                   bits2-0=AM33 exreg banks)
+      add  -imm,sp               0xF8 0xFE <sd8>  / 0xFA 0xFE <sd16 LE>
+                                                  / 0xFC 0xFE <imm32 LE>
+    Frame allocation always uses a negative immediate, so the top bit of the
+    (little-endian) immediate's high byte is required to be 1 below.
+
+    totalbits = fixed (non-wildcard) bits required across pre+post pair
+    postbits  = fixed bits required from the post pattern alone
+  -->
+
+  <!-- High confidence: prologue immediately after a return or padding. -->
+  <patternpairs totalbits="16" postbits="8">
+    <prepatterns>
+      <data>0xdf ........ ........</data>       <!-- ret [reglist],imm8 -->
+      <data>0xde ........ ........</data>       <!-- retf [reglist],imm8 -->
+      <data>0xf0 0xfc</data>                    <!-- rets -->
+      <data>0xf0 0xfc 0xcb</data>               <!-- rets; nop pad -->
+      <data>0xdf ........ ........ 0xcb</data>  <!-- ret; nop pad -->
+      <data>0xcb</data>                         <!-- nop pad -->
+    </prepatterns>
+    <postpatterns>
+      <data>0xcf 1.......</data>                <!-- movm [..d2..],(sp) -->
+      <data>0xcf .1......</data>                <!-- movm [..d3..],(sp) -->
+      <data>0xcf ..1.....</data>                <!-- movm [..a2..],(sp) -->
+      <data>0xcf ...1....</data>                <!-- movm [..a3..],(sp) -->
+      <data>0xf8 0xfe 1.......</data>                                <!-- add -imm8,sp -->
+      <data>0xfa 0xfe ........ 1.......</data>                       <!-- add -imm16,sp -->
+      <data>0xfc 0xfe ........ ........ ........ 1.......</data>     <!-- add -imm32,sp -->
+      <codeboundary/>
+      <possiblefuncstart/>
+    </postpatterns>
+  </patternpairs>
+
+  <!-- Medium confidence: prologue after an unconditional jump (tail call /
+       function laid out after a branch island). Same posts, weaker context. -->
+  <patternpairs totalbits="16" postbits="8">
+    <prepatterns>
+      <data>0xca ........</data>                              <!-- bra d8 -->
+      <data>0xcc ........ ........</data>                     <!-- jmp d16 -->
+      <data>0xdc ........ ........ ........ ........</data>   <!-- jmp d32 -->
+      <data>0xf0 111101..</data>                              <!-- jmp (an) -->
+    </prepatterns>
+    <postpatterns>
+      <data>0xcf 1.......</data>                <!-- movm [..d2..],(sp) -->
+      <data>0xcf .1......</data>                <!-- movm [..d3..],(sp) -->
+      <data>0xcf ..1.....</data>                <!-- movm [..a2..],(sp) -->
+      <data>0xcf ...1....</data>                <!-- movm [..a3..],(sp) -->
+      <data>0xf8 0xfe 1.......</data>                                <!-- add -imm8,sp -->
+      <data>0xfa 0xfe ........ 1.......</data>                       <!-- add -imm16,sp -->
+      <data>0xfc 0xfe ........ ........ ........ 1.......</data>     <!-- add -imm32,sp -->
+      <codeboundary/>
+      <possiblefuncstart/>
+    </postpatterns>
+  </patternpairs>
+
+  <!-- Standalone: the canonical two-instruction prologue is distinctive
+       enough (25 fixed bits) to stand without pre-context, e.g. after
+       literal pools or data. -->
+  <pattern>
+    <data>0xcf ........ 0xf8 0xfe 1.......</data>  <!-- movm [regs],(sp); add -imm8,sp -->
+    <codeboundary/>
+    <possiblefuncstart/>
+  </pattern>
+  <pattern>
+    <data>0xcf ........ 0xfa 0xfe ........ 1.......</data>  <!-- movm [regs],(sp); add -imm16,sp -->
+    <codeboundary/>
+    <possiblefuncstart/>
+  </pattern>
+</patternlist>

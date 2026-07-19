@@ -2203,21 +2203,23 @@ macro swaph_word32(dst, src) {
 # FE D9 fmov/dcpf memory subset (AM33_2)
 :dcpf "("^IMM32HI8_B3456^","^RREG_B2_HI^")" is b0_any=0xFE; b1_any=0x46; RREG_B2_HI & b2_3=0 & b2_2=0 & b2_1=0 & b2_0=0; IMM32HI8_B3456 { }
 
-:fmov IMM32HI8_B3456 is b0_any=0xFE; b1_7=0 & b1_6=1 & b1_5=0 & b1_4=0 & b1_3=0 & b1_2=0 & b1_1=0; b2_any; IMM32HI8_B3456 { }
-:fmov IMM32HI8_B3456 is b0_any=0xFE; b1_7=0 & b1_6=1 & b1_5=0 & b1_4=0 & b1_3=0 & b1_2=0 & b1_1=1; b2_any; IMM32HI8_B3456 { }
-:fmov IMM32HI8_B3456 is b0_any=0xFE; b1_7=0 & b1_6=1 & b1_5=0 & b1_4=0 & b1_3=0 & b1_2=1 & b1_1=0; b2_any; IMM32HI8_B3456 { }
-:fmov IMM32HI8_B3456 is b0_any=0xFE; b1_7=0 & b1_6=1 & b1_5=0 & b1_4=1 & b1_3=0 & b1_2=0 & b1_0=0; b2_any; IMM32HI8_B3456 { }
-:fmov IMM32HI8_B3456 is b0_any=0xFE; b1_7=0 & b1_6=1 & b1_5=0 & b1_4=1 & b1_3=0 & b1_2=0 & b1_0=1; b2_any; IMM32HI8_B3456 { }
-:fmov IMM32HI8_B3456 is b0_any=0xFE; b1_7=0 & b1_6=1 & b1_5=0 & b1_4=1 & b1_3=0 & b1_2=1 & b1_0=0; b2_any; IMM32HI8_B3456 { }
+:fmov IMM32HI8_B3456 is b0_any=0xFE; b1_7=0 & b1_6=1 & b1_5=0 & b1_4=0 & b1_3=0 & b1_2=0 & b1_1=0; b2_any; IMM32HI8_B3456 unimpl
+:fmov IMM32HI8_B3456 is b0_any=0xFE; b1_7=0 & b1_6=1 & b1_5=0 & b1_4=0 & b1_3=0 & b1_2=0 & b1_1=1; b2_any; IMM32HI8_B3456 unimpl
+:fmov IMM32HI8_B3456 is b0_any=0xFE; b1_7=0 & b1_6=1 & b1_5=0 & b1_4=0 & b1_3=0 & b1_2=1 & b1_1=0; b2_any; IMM32HI8_B3456 unimpl
+:fmov IMM32HI8_B3456 is b0_any=0xFE; b1_7=0 & b1_6=1 & b1_5=0 & b1_4=1 & b1_3=0 & b1_2=0 & b1_0=0; b2_any; IMM32HI8_B3456 unimpl
+:fmov IMM32HI8_B3456 is b0_any=0xFE; b1_7=0 & b1_6=1 & b1_5=0 & b1_4=1 & b1_3=0 & b1_2=0 & b1_0=1; b2_any; IMM32HI8_B3456 unimpl
+:fmov IMM32HI8_B3456 is b0_any=0xFE; b1_7=0 & b1_6=1 & b1_5=0 & b1_4=1 & b1_3=0 & b1_2=1 & b1_0=0; b2_any; IMM32HI8_B3456 unimpl
 
 # Undefined-opcode families (multi-byte decode coverage)
-:udf DREG_D0_HI, DREG_D0_LO is b0_any=0xF6; DREG_D0_HI & DREG_D0_LO { }
-:udf SIMM8_B2, DREG_D0_LO is b0_any=0xF9; b1_3=0 & b1_2=0 & DREG_D0_LO; SIMM8_B2 { }
-:udfu IMM8_B2, DREG_D0_LO is b0_any=0xF9; b1_3=0 & b1_2=1 & DREG_D0_LO; IMM8_B2 { }
-:udf SIMM16_B23, DREG_D0_LO is b0_any=0xFB; b1_3=0 & b1_2=0 & DREG_D0_LO; SIMM16_B23 { }
-:udfu IMM16_B23, DREG_D0_LO is b0_any=0xFB; b1_3=0 & b1_2=1 & DREG_D0_LO; IMM16_B23 { }
-:udf IMM32_B2345, DREG_D0_LO is b0_any=0xFD; b1_3=0 & b1_2=0 & DREG_D0_LO; IMM32_B2345 { }
-:udfu IMM32_B2345, DREG_D0_LO is b0_any=0xFD; b1_3=0 & b1_2=1 & DREG_D0_LO; IMM32_B2345 { }
+:udf DREG_D0_HI, DREG_D0_LO is b0_any=0xF6; DREG_D0_HI & DREG_D0_LO unimpl
+:udf SIMM8_B2, DREG_D0_LO is b0_any=0xF9; b1_3=0 & b1_2=0 & DREG_D0_LO; SIMM8_B2 unimpl
+:udfu IMM8_B2, DREG_D0_LO is b0_any=0xF9; b1_3=0 & b1_2=1 & DREG_D0_LO; IMM8_B2 unimpl
+:udf SIMM16_B23, DREG_D0_LO is b0_any=0xFB; b1_3=0 & b1_2=0 & DREG_D0_LO; SIMM16_B23 unimpl
+:udfu IMM16_B23, DREG_D0_LO is b0_any=0xFB; b1_3=0 & b1_2=1 & DREG_D0_LO; IMM16_B23 unimpl
+:udf IMM32_B2345, DREG_D0_LO is b0_any=0xFD; b1_3=0 & b1_2=0 & DREG_D0_LO; IMM32_B2345 unimpl
+:udfu IMM32_B2345, DREG_D0_LO is b0_any=0xFD; b1_3=0 & b1_2=1 & DREG_D0_LO; IMM32_B2345 unimpl
 
-# Fallback: consume one byte and render raw opcode
-:op b0_imm is b0_imm { }
+# Fallback: consume one byte and render raw opcode.
+# Marked unimpl so uncovered encodings surface as decompiler warnings
+# instead of silently decompiling as no-ops.
+:op b0_imm is b0_imm unimpl
