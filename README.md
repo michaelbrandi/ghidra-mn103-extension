@@ -381,16 +381,31 @@ This corpus currently includes firmware images from:
 - DMC-TZ7/ZS3
 - DMC-ZX3
 
-In quick checks the files show recognizable container headers such as UPD or
-Panasonic markers, plus readable strings inside the payloads. I did not find
-evidence of encrypted update blobs in these samples, and Ghidra begins normal
-disassembly and decompilation on them.
+**Set expectations before you fetch this corpus: most of it is not
+disassemblable.** Of the 14 files, 9 (FP3, FS15, FT3, LX3, LX5, TZ7, ZS3, ZX3,
+FZ80) are `UPD`-wrapped payloads whose contents measure at roughly 8.0
+bits/byte entropy with garbage `strings` output — they are encrypted or
+compressed, and nothing useful comes out of them until the container is
+unwrapped. TZ4 carries no `UPD` header and is a raw image. The two HX-A1M files
+use `AITS`/`MCR2` containers and do contain readable RTOS strings (`MMPF_*`);
+their actual CPU is unconfirmed and may not be MN103 at all.
 
-The full optional Panasonic corpus was also run headless through Ghidra on
-2026-04-06 and came back clean: 14/14 files with `unknown=0` and no failed
-files. The first-model FZ1000 image was evaluated separately and is still
-excluded from the corpus because it did not behave like a useful analysis
-sample.
+An earlier version of this section reported the full corpus running headless
+"clean: 14/14 files with `unknown=0` and no failed files". That number was an
+artifact of the measurement, not evidence of real disassembly. `ReportUnknownOps`
+counts only the 1-byte `op` fallback, and the MN103 encoding is dense enough
+that roughly 98% of random bytes still decode as plausible multi-byte
+instructions — a 64 KB chunk of the encrypted FS15 payload reports only ~1.96%
+"unknown". Treat the unknown ratio as a lower bound that badly understates
+garbage on high-entropy input; it is only meaningful on inputs already known to
+be code.
+
+The corpus that genuinely disassembles is the NVIDIA blobs (real MN103 code)
+plus the raw TZ4 image. The Panasonic samples are still worth fetching as
+container/packaging references and as a reminder of the metric's limits, but do
+not read their headless results as a coverage signal. The first-model FZ1000
+image was evaluated separately and is still excluded from the corpus because it
+did not behave like a useful analysis sample.
 
 ## Extract Linux MN10300 Symbols For Ghidra (Optional)
 
