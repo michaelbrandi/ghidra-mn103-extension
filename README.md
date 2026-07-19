@@ -149,6 +149,31 @@ branchless flag results were emulation-checked against the previous branchy
 form across shift counts 0/1/2/31 for all three shift directions (identical
 results, including arithmetic sign-extension and the zero-count edge case).
 
+## MMIO / interrupt-handler readability
+
+The processor spec now models the AM33/MN10300 on-chip register space so
+driver and interrupt code reads correctly:
+
+- The 0xc0000000-0xdfffffff I/O window is declared `volatile`, matching the
+  Linux `__SYSREG` accessors. This stops the decompiler from caching or
+  dead-code-eliminating repeated MMIO reads/writes. Verified with a demo that
+  reads and writes a status register twice: against the volatile range all
+  four accesses survive decompilation, while the identical sequence against
+  ordinary RAM collapses to an empty function.
+- The AM33 CPU core system registers (fixed architectural addresses from the
+  Linux `cpu-regs.h` core block: `IVAR0`-`IVAR6`, `CPUP`, `TBR`, `CPUM`,
+  `sISR`, `CHCTR`, the MMU `*PTE*`/`MMUCTR`/`PTBR` set, and the cache-purge
+  registers) are labelled by name via `default_symbols`, with a small
+  `cpu_regs` backing block so they resolve on any image. A read of
+  0xc0000044 now decompiles as `sISR` rather than `Ramc0000044`.
+
+Chip-specific peripherals (serial, timers, interrupt controller) live higher
+in the same window and vary by AM33 variant, so they are covered by the
+volatile range but not labelled here. Exception-vector addresses are relative
+to the `TBR` trap base and are therefore image-specific; use the
+`extract_linux_mn103_symbols.py` label script to apply vector/syscall names at
+the base a given image uses.
+
 The detailed phase coverage listed below is the build-up that led to the
 current active spec. The archived experimental snapshot is retained only as a
 historical reference.
