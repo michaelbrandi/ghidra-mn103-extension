@@ -1528,6 +1528,17 @@ macro swaph_word32(dst, src) {
 :btst IMM8_B2, DREG_D0_LO is b0_any=0xF8; b1_7=1 & b1_6=1 & b1_5=1 & b1_4=0 & b1_3=1 & b1_2=1 & DREG_D0_LO; IMM8_B2 { local bit:4 = zext(IMM8_B2); update_btst_reg32(bit, DREG_D0_LO); }
 :btst IMM16_B23, DREG_D0_LO is b0_any=0xFA; b1_7=1 & b1_6=1 & b1_5=1 & b1_4=0 & b1_3=1 & b1_2=1 & DREG_D0_LO; IMM16_B23 { local bit:4 = zext(IMM16_B23); update_btst_reg32(bit, DREG_D0_LO); }
 :btst IMM32_B2345, DREG_D0_LO is b0_any=0xFC; b1_7=1 & b1_6=1 & b1_5=1 & b1_4=0 & b1_3=1 & b1_2=1 & DREG_D0_LO; IMM32_B2345 { local bit:4 = IMM32_B2345; update_btst_reg32(bit, DREG_D0_LO); }
+# btst imm8,(sd8,an): AND the immediate mask with the memory byte and set
+# flags per the manual (VF/CF clear, NF/ZF track the masked-byte result).
+# binutils: 0xfaf80000 mask 0xfffc0000, {IMM8, MEM2(SD8N_SHIFT8, AN0)}.
+:btst IMM8_B3, "("^SIMM8_B2^","^AREG_D0_LO^")" is b0_any=0xFA; b1_7=1 & b1_6=1 & b1_5=1 & b1_4=1 & b1_3=1 & b1_2=0 & AREG_D0_LO; SIMM8_B2; IMM8_B3 {
+    local addr:4 = AREG_D0_LO + sext(SIMM8_B2);
+    local res:1 = (*[ram]:1 addr) & IMM8_B3;
+    $(ZF) = (res == 0);
+    $(NF) = (res s< 0);
+    $(VF) = 0;
+    $(CF) = 0;
+}
 
 :inc DREG_S0_HI is b0_7=0 & b0_6=1 & b0_5=0 & b0_4=0 & DREG_S0_HI & b0_1=0 & b0_0=0 { DREG_S0_HI = DREG_S0_HI + 1; }
 :inc AREG_S0_HI is b0_7=0 & b0_6=1 & b0_5=0 & b0_4=0 & AREG_S0_HI & b0_1=0 & b0_0=1 { AREG_S0_HI = AREG_S0_HI + 1; }
@@ -2055,6 +2066,17 @@ macro swaph_word32(dst, src) {
     local a:4 = RREG_B2_LO;
     *[ram]:2 a = RREG_B2_HI:2;
     RREG_B2_LO = RREG_B2_LO + IMM24_B345;
+}
+
+# mov (sd16,am),dn / (sd16,am),an load forms (FMT_D2, binutils 0xfa000000 /
+# 0xfa200000, mask 0xfff00000). Base-register + 16-bit signed displacement.
+:mov "("^SIMM16_B23^","^AREG_D0_LO^")", DREG_D0_HI is b0_any=0xFA; b1_7=0 & b1_6=0 & b1_5=0 & b1_4=0 & AREG_D0_LO & DREG_D0_HI; SIMM16_B23 {
+    local a:4 = AREG_D0_LO + sext(SIMM16_B23);
+    DREG_D0_HI = *[ram]:4 a;
+}
+:mov "("^SIMM16_B23^","^AREG_D0_LO^")", AREG_D0_HI is b0_any=0xFA; b1_7=0 & b1_6=0 & b1_5=1 & b1_4=0 & AREG_D0_LO & AREG_D0_HI; SIMM16_B23 {
+    local a:4 = AREG_D0_LO + sext(SIMM16_B23);
+    AREG_D0_HI = *[ram]:4 a;
 }
 
 # non-AM33 mov D1 SD8 forms
