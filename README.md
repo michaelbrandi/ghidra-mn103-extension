@@ -16,8 +16,21 @@ security-sensitive deployment.
 
 As of March 26, 2026, the packaged `data/languages/mn103.slaspec` is the
 active compile-safe spec used by the extension.
-It compiles and loads reliably in Ghidra 12.0.4 and is validated against the
-current demo, firmware, and public-blob regression corpora.
+It compiles and loads reliably in Ghidra 12.0.4.
+
+What "validated" actually means here, in decreasing order of strength:
+
+- exact-match instruction golden (specific byte sequences must produce
+  specific listing lines), an ABI golden asserting decompiler call/return
+  behavior, p-code emulation checks for the shift/flag semantics, and a
+  decompiler jump-table recovery test;
+- corpus runs (demo, NVIDIA public blobs) showing no fallback decodes and no
+  unimplemented-p-code decodes on real code. This is necessary but not
+  sufficient evidence: the MN103 encoding is dense enough that most random
+  bytes also decode as plausible instructions, so a clean decode ratio on its
+  own proves little (see the Panasonic corpus section for the metric's
+  limits). Corpus reports now include byte entropy and an unimplemented
+  ratio to keep this distinction visible.
 
 The larger development snapshot is preserved as:
 - `data/languages/mn103_full_experimental.slaspec`
@@ -258,8 +271,11 @@ historical reference.
 
 ## Current limitations
 
-- The remaining open work is mostly semantic and release-quality; the current
-  demo/firmware/real-blob corpora are decode-clean.
+- The remaining open work is mostly semantic and release-quality. The current
+  demo/firmware/real-blob corpora produce no fallback or unimplemented-p-code
+  decodes; note that this shows the decoder accepts the input, not that every
+  decoded instruction is semantically correct (see the compatibility note for
+  what the stronger checks cover).
 - The call model preserves the real ABI-specified callee-saved registers only:
   `A2`, `D2`, `D3`, and `SP`.
 - `MEMINC`/`MEMINC2` and `fmov` post-increment behavior is modeled explicitly,

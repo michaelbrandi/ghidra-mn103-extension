@@ -4,6 +4,7 @@ import ghidra.program.model.listing.Instruction;
 import ghidra.program.model.listing.InstructionIterator;
 import ghidra.program.model.listing.Listing;
 import ghidra.program.model.mem.MemoryBlock;
+import ghidra.program.model.pcode.PcodeOp;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,6 +41,7 @@ public class ReportUnknownOps extends GhidraScript {
 
         int total = 0;
         int unknown = 0;
+        int unimplemented = 0;
         Map<Integer, Integer> byByte = new HashMap<>();
         Map<Integer, Map<Integer, Integer>> prefixSecondByte = new HashMap<>();
         List<String> samples = new ArrayList<>();
@@ -47,6 +49,21 @@ public class ReportUnknownOps extends GhidraScript {
         while (it.hasNext()) {
             Instruction ins = it.next();
             total++;
+
+            // The MN103 encoding is dense enough that most random bytes decode
+            // as *some* multi-byte instruction, so the 1-byte `op` fallback
+            // ratio alone badly understates garbage on non-code input. Count
+            // instructions whose p-code is unimplemented (the fallback, the
+            // reserved udf/udfu families, and not-yet-modeled forms) as a
+            // second, stricter decode-health signal.
+            PcodeOp[] pcode = ins.getPcode();
+            for (PcodeOp op : pcode) {
+                if (op.getOpcode() == PcodeOp.UNIMPLEMENTED) {
+                    unimplemented++;
+                    break;
+                }
+            }
+
             if (!"op".equals(ins.getMnemonicString())) {
                 continue;
             }
@@ -89,6 +106,25 @@ public class ReportUnknownOps extends GhidraScript {
         double ratio = total == 0 ? 0.0 : (100.0 * unknown / total);
         println(String.format("UNKNOWN_SUMMARY program=%s total=%d unknown=%d ratio=%.2f%%",
             prog, total, unknown, ratio));
+
+        // Honest decode-health summary. unimpl counts instructions with
+        // unimplemented p-code; entropy is Shannon entropy (bits/byte) over
+        // the initialized memory bytes. Interpretation guidance:
+        //  - entropy near 8.0 means the input is compressed/encrypted and NO
+        //    decode metric on it is meaningful;
+        //  - a low unknown ratio is necessary but not sufficient evidence of
+        //    real code: ~98% of random bytes decode as plausible instructions.
+        double unimplRatio = total == 0 ? 0.0 : (100.0 * unimplemented / total);
+        double entropy = computeEntropyBitsPerByte();
+        println(String.format(
+            "DECODE_HEALTH program=%s total=%d op_fallback=%d unimpl=%d unimpl_ratio=%.2f%% entropy=%.2f",
+            prog, total, unknown, unimplemented, unimplRatio, entropy));
+        if (entropy >= 7.5) {
+            println(String.format(
+                "DECODE_HEALTH_WARNING program=%s high entropy (%.2f bits/byte): input is likely "
+                    + "compressed or encrypted; decode ratios on this file are not meaningful",
+                prog, entropy));
+        }
 
         List<Map.Entry<Integer, Integer>> entries = new ArrayList<>(byByte.entrySet());
         Collections.sort(entries, new Comparator<Map.Entry<Integer, Integer>>() {
@@ -149,6 +185,46 @@ public class ReportUnknownOps extends GhidraScript {
         for (String s : samples) {
             println(String.format("UNKNOWN_SAMPLE program=%s %s", prog, s));
         }
+    }
+
+    private double computeEntropyBitsPerByte() throws Exception {
+        long[] freq = new long[256];
+        long n = 0;
+        byte[] buf = new byte[65536];
+        for (MemoryBlock block : currentProgram.getMemory().getBlocks()) {
+            if (!block.isInitialized()) {
+                continue;
+            }
+            Address cur = block.getStart();
+            long remaining = block.getSize();
+            while (remaining > 0) {
+                int want = (int) Math.min(buf.length, remaining);
+                int got = block.getBytes(cur, buf, 0, want);
+                if (got <= 0) {
+                    break;
+                }
+                for (int i = 0; i < got; i++) {
+                    freq[buf[i] & 0xff]++;
+                }
+                n += got;
+                remaining -= got;
+                if (remaining > 0) {
+                    cur = cur.add(got);
+                }
+            }
+        }
+        if (n == 0) {
+            return 0.0;
+        }
+        double entropy = 0.0;
+        for (long f : freq) {
+            if (f == 0) {
+                continue;
+            }
+            double p = (double) f / n;
+            entropy -= p * (Math.log(p) / Math.log(2.0));
+        }
+        return entropy;
     }
 
     private void linearSweepDisassemble() throws Exception {
