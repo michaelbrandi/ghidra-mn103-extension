@@ -1027,49 +1027,44 @@ macro update_not32(dst) {
 }
 
 macro update_lsr32(dst, count) {
+    # Branchless flag update: a p-code shift by >= 32 yields 0, so for a
+    # zero count the carry probe (old >> (sh-1), i.e. old >> 0xffffffff)
+    # is 0 and CF clears without an internal branch. Keeping this straight-line
+    # matters for index-scaling shifts inside switch dispatch, where internal
+    # p-code branches defeat the decompiler's jump-table recovery.
     local sh:4 = count & 0x1f;
     local old:4 = dst;
-    if (sh != 0) goto <DO_SHIFT>;
-    $(CF) = 0;
-    goto <DONE_SHIFT>;
-<DO_SHIFT>
-    local ctmp:4 = old >> (sh - 1);
-    local cbit:4 = ctmp & 1;
+    local cbit:4 = (old >> (sh - 1)) & 1;
     $(CF) = (cbit != 0);
     dst = old >> sh;
-<DONE_SHIFT>
     $(VF) = 0;
     update_zn32(dst);
 }
 
 macro update_asl32(dst, count) {
+    # Branchless flag update (see update_lsr32): for a zero count the carry
+    # probe old >> (32 - sh) becomes old >> 32, which a p-code shift defines
+    # as 0, so CF clears with no internal branch. Straight-line p-code keeps
+    # index-scaling shifts (e.g. asl2) from breaking jump-table recovery.
     local sh:4 = count & 0x1f;
     local old:4 = dst;
-    if (sh != 0) goto <DO_ASL_SHIFT>;
-    $(CF) = 0;
-    goto <DONE_ASL_SHIFT>;
-<DO_ASL_SHIFT>
-    local ctmp:4 = old >> (32 - sh);
-    local cbit:4 = ctmp & 1;
+    local cbit:4 = (old >> (32 - sh)) & 1;
     $(CF) = (cbit != 0);
     dst = old << sh;
-<DONE_ASL_SHIFT>
     $(VF) = 0;
     update_zn32(dst);
 }
 
 macro update_asr32(dst, count) {
+    # Branchless flag update (see update_lsr32): zero count makes the carry
+    # probe old >> (sh-1) an oversized shift that yields 0, clearing CF with
+    # no internal branch. Straight-line p-code preserves jump-table recovery
+    # for shift-scaled switch dispatch.
     local sh:4 = count & 0x1f;
     local old:4 = dst;
-    if (sh != 0) goto <DO_ASR_SHIFT>;
-    $(CF) = 0;
-    goto <DONE_ASR_SHIFT>;
-<DO_ASR_SHIFT>
-    local ctmp:4 = old >> (sh - 1);
-    local cbit:4 = ctmp & 1;
+    local cbit:4 = (old >> (sh - 1)) & 1;
     $(CF) = (cbit != 0);
     dst = old s>> sh;
-<DONE_ASR_SHIFT>
     $(VF) = 0;
     update_zn32(dst);
 }

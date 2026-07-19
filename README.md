@@ -131,6 +131,24 @@ corpus (no false positives; that ucode saves registers at the call site via
 `call [reglist],imm8`, so its bare callee entries are out of scope for
 prologue-based discovery and are found via call flow instead).
 
+## Switch / jump-table recovery
+
+Shift instructions now emit straight-line flag p-code. The `lsr`/`asl`/`asr`
+carry-flag helpers previously used an internal `if (count != 0)` branch to
+zero the carry for a zero shift count. Because scaling a switch index is
+almost always a constant shift (`asl2` = index * 4), that internal branch sat
+directly in the dispatch path and caused the decompiler to give up on
+jump-table recovery (`Could not recover jumptable ... Too many branches`),
+emitting an opaque indirect call instead of a `switch`.
+
+The helpers now compute the carry without a branch, relying on p-code's
+defined "shift by >= width yields 0" semantics so a zero count still clears
+the carry. With that change a bounds-checked `jmp (An)` table dispatch
+decompiles as a clean `switch` with recovered cases and default. The
+branchless flag results were emulation-checked against the previous branchy
+form across shift counts 0/1/2/31 for all three shift directions (identical
+results, including arithmetic sign-extension and the zero-count edge case).
+
 The detailed phase coverage listed below is the build-up that led to the
 current active spec. The archived experimental snapshot is retained only as a
 historical reference.

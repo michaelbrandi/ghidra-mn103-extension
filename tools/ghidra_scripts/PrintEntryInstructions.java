@@ -37,8 +37,18 @@ public class PrintEntryInstructions extends GhidraScript {
         int maxCount = 80;
         while (inst != null && count < maxCount) {
             println(inst.getAddress() + ": " + inst);
-            inst = inst.getNext();
             count++;
+            // Follow only the contiguous instruction stream from entry. Other
+            // analyzers (e.g. the function-start pattern search) may independently
+            // disassemble unrelated blocks elsewhere in the image; getNext() would
+            // otherwise bridge across the address gap into them and inflate the
+            // count. Stopping at the gap keeps this focused on the entry function.
+            Address expectedNext = inst.getMaxAddress().add(1);
+            Instruction next = inst.getNext();
+            if (next == null || !next.getAddress().equals(expectedNext)) {
+                break;
+            }
+            inst = next;
         }
 
         println("Printed " + count + " instructions");
