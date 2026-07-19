@@ -113,8 +113,10 @@ jobs:
           - instruction golden demo
           - ABI golden demo with natural D1:D0 wide-return flow
 
-          The checked-in data/languages/mn103.slaspec and data/languages/mn103.sla files are the supported release baseline.
+          The checked-in data/languages/mn103.slaspec is the supported release baseline; mn103.sla is compiled from it by the build.
           The generator remains reference/reconciliation material.
+
+          Note: a clean corpus decode ratio shows the decoder accepts the input, not that every instruction's semantics are correct. See the README compatibility note for what "validated" covers.
           EOF
 
       - name: Upload release artifacts

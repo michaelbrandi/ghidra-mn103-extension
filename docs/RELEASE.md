@@ -38,8 +38,8 @@ Use release-candidate tags until the extension has had broader human review and
 field testing:
 
 ```bash
-git tag -a v0.7.0-rc1 -m "MN103 Ghidra extension v0.7.0-rc1"
-git push origin main v0.7.0-rc1
+git tag -a v0.8.0-rc1 -m "MN103 Ghidra extension v0.8.0-rc1"
+git push origin main v0.8.0-rc1
 ```
 
 If a published release-candidate tag fails in CI, leave it in place and cut the

@@ -294,7 +294,7 @@ historical reference.
 - AM33 overlap aliases follow binutils table precedence (first-match retained)
 - Bit-memory `btst`/`bset`/`bclr` flag behavior now follows the manual more closely: `VF`/`CF` clear, `NF`/`ZF` track the logical test result, and the byte memory side effects remain modeled explicitly
 
-This is deliberate for version `0.7`: branch/call/return behavior was modeled first,
+This staged buildup carries into the `0.8` line: branch/call/return behavior was modeled first,
 then core arithmetic/data-move register forms, then selected `mov` memory forms,
 then selected indexed/IMM32/AM33-R memory forms, then selected unary/extension
 families, then selected shift families, then selected bit-test/set/clear and S0
