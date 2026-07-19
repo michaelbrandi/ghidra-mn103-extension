@@ -20,6 +20,17 @@ It compiles and loads reliably in Ghidra 12.0.4.
 
 What "validated" actually means here, in decreasing order of strength:
 
+- **Differential disassembly against the reference implementation.** The spec
+  was derived from the GNU binutils opcode tables, so binutils'
+  `mn10300-elf-objdump` is the ground truth. `tools/run_objdump_diff.sh`
+  disassembles a corpus with both objdump and Ghidra over the identical byte
+  stream and reports measured agreement. On the NVIDIA public firmware corpus
+  (65,190 compared instructions): **96.9% mnemonic agreement, 96.1%
+  mnemonic+operand agreement, 97.9% instruction-boundary agreement.** Of the
+  ~3% mnemonic disagreement, 93% are reserved/undefined encodings that both
+  disassemblers handle specially (and which Ghidra now surfaces as `unimpl`
+  rather than silently); the remaining real coverage gaps are two instruction
+  forms (`btst imm8,(d8,an)` and `mov (d16,an),reg`).
 - exact-match instruction golden (specific byte sequences must produce
   specific listing lines), an ABI golden asserting decompiler call/return
   behavior, p-code emulation checks for the shift/flag semantics, and a
